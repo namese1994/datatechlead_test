@@ -9,8 +9,183 @@
 
 ---
 
+
 * **Purpose**: <em>Describe the high‑level objectives of the data platform (analytics, ML, BI, etc.).</em>
-* **High‑level diagram**: `TODO` embed Mermaid diagram summarizing core services and data flow.
+* **High‑level Architecture Diagram**: Diagram summarizing core services.
+  
+  ```mermaid
+  graph TB
+    subgraph "🌐 User Connectivity"
+        Users[👥 Business Users<br/>Data Scientists, Analysts, Engineers]
+        AdminAccess[🔐 Secure Access<br/>AWS Session Manager<br/>No VPN Required]
+    end
+    
+    subgraph "☁️ AWS Cloud Infrastructure"
+        subgraph "🏢 Primary Datacenter (Singapore)"
+            subgraph "🔒 Private Secure Zone (Private Network)"
+                subgraph "📊 Data Processing Layer"
+                    NLB[⚖️ Load Balancer<br/>Network Load Balancer<br/>📈 Auto-distribute traffic]
+                    
+                    subgraph "🏗️ Server Cluster Zone A"
+                        Workers1[💻 Data Processing Servers<br/>Auto Scaling Group: 2-10 instances<br/>🚀 Auto-scale based on demand]
+                        Auth1[🔐 Authentication Server A<br/>FreeIPA Master<br/>👤 Employee account management]
+                    end
+                    
+                    subgraph "🏗️ Server Cluster Zone B"
+                        Workers2[💻 Data Processing Servers<br/>Auto Scaling Group: 2-10 instances<br/>🚀 Auto-scale based on demand]
+                        Auth2[🔐 Authentication Server B<br/>FreeIPA Replica<br/>🛡️ Authentication system backup]
+                    end
+                end
+                
+                subgraph "💾 Data Storage Layer"
+                    EFS[📁 Shared File System<br/>Amazon EFS<br/>💰 Pay-as-you-use<br/>🔄 Auto-scale from GB to PB]
+                end
+            end
+            
+            subgraph "🛡️ Security & Operations Services"
+                SecMgr[🔑 Password Management<br/>AWS Secrets Manager<br/>🔐 Secure credential storage]
+                Monitoring[📈 System Monitoring<br/>CloudWatch<br/>📊 Dashboards & Alerts]
+                Backup[💿 Automated Backup<br/>AWS Backup<br/>📅 Daily scheduled backups]
+            end
+        end
+    end
+    
+    %% User Flow
+    Users --> AdminAccess
+    AdminAccess --> NLB
+    
+    %% Load Distribution
+    NLB --> Workers1
+    NLB --> Workers2
+    NLB --> Auth1
+    NLB --> Auth2
+    
+    %% Authentication Flow
+    Workers1 --> Auth1
+    Workers2 --> Auth2
+    Auth1 -.->|🔄 Sync| Auth2
+    
+    %% Data Access
+    Workers1 --> EFS
+    Workers2 --> EFS
+    
+    %% Security & Operations
+    Workers1 --> SecMgr
+    Workers2 --> SecMgr
+    Workers1 --> Monitoring
+    Workers2 --> Monitoring
+    EFS --> Backup
+    
+    %% Styling
+    classDef userClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef computeClass fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef storageClass fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef securityClass fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    
+    class Users,AdminAccess userClass
+    class NLB,Workers1,Workers2,Auth1,Auth2 computeClass
+    class EFS storageClass
+    class SecMgr,Monitoring,Backup securityClass
+  ```
+* **High‑level Technical-Detailed Diagram**: Diagram for technical detail design
+  ```mermaid
+    graph TB
+    subgraph "AWS Region: ap-southeast-1"
+        subgraph "VPC: 10.0.0.0/16"
+            subgraph "Public Subnets"
+                subgraph "AZ-1a: 10.0.1.0/24"
+                    NLB-1a[Network LB<br/>Port: 80,443,22,389]
+                    NAT-1a[NAT Gateway<br/>For outbound traffic]
+                end
+                subgraph "AZ-1b: 10.0.2.0/24" 
+                    NLB-1b[Network LB Target<br/>Cross-AZ redundancy]
+                    NAT-1b[NAT Gateway<br/>Backup outbound]
+                end
+            end
+            
+            subgraph "Private App Subnets"
+                subgraph "AZ-1a: 10.0.10.0/24"
+                    ASG-1a[Auto Scaling Group<br/>Min:2, Max:10, Desired:4]
+                    EC2-1a[m5.xlarge instances<br/>4vCPU, 16GB RAM<br/>SG: app-servers-sg]
+                    FreeIPA-1a[c5.large instance<br/>2vCPU, 4GB RAM<br/>SG: freeipa-master-sg<br/>Ports: 53,88,389,636,464]
+                end
+                subgraph "AZ-1b: 10.0.20.0/24"
+                    ASG-1b[Auto Scaling Group<br/>Min:2, Max:10, Desired:4]
+                    EC2-1b[m5.xlarge instances<br/>4vCPU, 16GB RAM<br/>SG: app-servers-sg]
+                    FreeIPA-1b[c5.large instance<br/>2vCPU, 4GB RAM<br/>SG: freeipa-replica-sg<br/>Ports: 53,88,389,636]
+                end
+            end
+            
+            subgraph "Private Data Subnets"
+                subgraph "AZ-1a: 10.0.30.0/24"
+                    EFS-MT-1a[EFS Mount Target<br/>SG: efs-sg<br/>Port: 2049/TCP]
+                end
+                subgraph "AZ-1b: 10.0.40.0/24"
+                    EFS-MT-1b[EFS Mount Target<br/>SG: efs-sg<br/>Port: 2049/TCP]
+                end
+                EFS[Amazon EFS<br/>Encryption: AES-256<br/>Performance: Provisioned<br/>Throughput: 500 MiB/s]
+            end
+            
+            subgraph "VPC Endpoints Subnet: 10.0.50.0/24"
+                VPC-EP-SSM[SSM VPC Endpoint<br/>com.amazonaws.region.ssm]
+                VPC-EP-S3[S3 Gateway Endpoint<br/>com.amazonaws.region.s3]
+                VPC-EP-SM[Secrets Manager Endpoint<br/>com.amazonaws.region.secretsmanager]
+            end
+        end
+    end
+    
+    subgraph "AWS Managed Services"
+        SM[AWS Secrets Manager<br/>KMS Encrypted<br/>Auto-rotation: 30 days]
+        CW[CloudWatch<br/>Metrics + Logs + Alarms<br/>Retention: 90 days]
+        BACKUP[AWS Backup<br/>Daily: 7 days retention<br/>Weekly: 4 weeks retention]
+        SSM[Systems Manager<br/>Session Manager<br/>Patch Manager]
+    end
+    
+    subgraph "External"
+        Users[👥 Users<br/>SSH via Session Manager]
+        Internet[🌐 Internet]
+    end
+    
+    %% Network Flow - Detailed
+    Users -->|HTTPS/443| NLB-1a
+    NLB-1a -->|TCP/22| EC2-1a
+    NLB-1a -->|TCP/389,636| FreeIPA-1a
+    NLB-1a -.->|Health Check| NLB-1b
+    
+    %% Cross-AZ Replication
+    EC2-1a -->|NFS/2049| EFS-MT-1a
+    EC2-1b -->|NFS/2049| EFS-MT-1b
+    EFS --> EFS-MT-1a
+    EFS --> EFS-MT-1b
+    
+    %% Authentication Flow
+    EC2-1a -->|LDAP/389| FreeIPA-1a
+    EC2-1b -->|LDAP/389| FreeIPA-1b
+    FreeIPA-1a -.->|Replication/389| FreeIPA-1b
+    
+    %% Auto Scaling
+    ASG-1a --> EC2-1a
+    ASG-1b --> EC2-1b
+    
+    %% Security & Monitoring
+    EC2-1a -->|HTTPS/443| VPC-EP-SSM
+    EC2-1b -->|HTTPS/443| VPC-EP-SSM
+    FreeIPA-1a -->|HTTPS/443| VPC-EP-SM
+    VPC-EP-SSM --> SSM
+    VPC-EP-SM --> SM
+    
+    %% Outbound Internet
+    EC2-1a --> NAT-1a
+    EC2-1b --> NAT-1b
+    NAT-1a --> Internet
+    NAT-1b --> Internet
+    
+    %% Monitoring & Backup
+    EC2-1a -->|CloudWatch Agent| CW
+    EC2-1b -->|CloudWatch Agent| CW
+    EFS --> BACKUP
+    FreeIPA-1a --> BACKUP
+  ```
 * **Core AWS services**: EC2, EFS/NFS, IAM, FreeIPA, VPC, Security Groups, CloudWatch, S3.
 * **Data flow outline**: Bullet list of ingestion → processing → storage → consumption paths.
 * **Scalability & HA strategy**: Auto Scaling groups, Multi‑AZ design, fault‑tolerant components.

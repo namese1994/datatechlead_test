@@ -9,7 +9,83 @@
 
 ---
 
-* Draft a **high‑level architecture description** covering: EC2 user systems, EFS/NFS shared storage, IAM roles & policies, FreeIPA authentication, VPC & subnet layout, security groups, and network flow.
+* Draft a **high‑level architecture description** covering: EC2 user systems, EFS/NFS shared storage, FreeIPA authentication, VPC & subnet layout, security groups, and network flow. 
+
+  * GenAI proposes infrastructure options to support brainstorming. Using this prompt:
+    ```
+    # ROLE
+    You are a senior cloud architect and data platform lead.  
+    
+    # CONTEXT
+    I need to design a robust AWS Data Platform Foundation for an enterprise usecasethat requires:
+    - User Linux systems - EC2 instance architecture, sizing, configurationspecifications
+    - NFS storage architecture - shared file system design, capacity planningperformance considerations
+    - FreeIPA integration design - authentication system architecture, directoryservice integration
+    
+    Other non-functional requirement:
+    - Ensure high availability, scalability
+    - Ensure disaster recovery capability
+    
+    # Your tasks:
+    
+    1. Propose three infrastructure options that satisfy the above requirements.
+    2. For each architecture, provide:
+        - A high-level diagram in Mermaid markdown format (for easy visualization)
+        - Key AWS services and components used
+        - Access control and authentication flow
+        - Pros and cons (including security, scalability, operational complexity, cost)
+        - A brief summary of when each option is preferable
+    3. Present the answer in markdown, clearly separating each option, usingbulletpoints and detail blocks.
+    4. Keep the output concise but comprehensive, suitable for a technical report.
+    
+    # Extra requirements:
+    - Start each draft with a bold headline and a short summary.
+    - All code and diagrams must be in markdown-compatible format.
+    ```
+  * After the options are proposed, the final decision will be made manually. Then, ask GenAI to add enhancements and create a Core Infrastructure Diagram by continuing the conversation above with GenAI. Using this prompt:
+    ```
+    Follow up above.
+
+    This is my infrastructure choice for above task:
+    
+    - Network
+      - VPC
+      - Private Subnet for all workloads
+      - Load Balancers: 
+        - Network LB for FreeIPA and workers
+    -  Workload
+      - NFS with EFS
+      - workers using EC2 and Auto Scaling Groups, connect EFS and FreeIPA. Assumethere is no web app, only data processors.
+      - FreeIPA with master/slave on difference AZ, for authentication.
+    - Security
+      - Session Manager
+      - FreeIPA
+      - Secrets Manager
+    - Monitoring
+      - Use managed monitoring system with Cloud Watch 
+      
+    # Your tasks:
+    Create Architecture diagrams using mermaid code- detailed system integration,component relationships, infrastructure topology
+    
+    # Instruction
+    
+    ## Follow below steps
+    1. Enumerate any additional components not previously listed, and explain theirrelationships within the complete data platform.
+    
+    2. Review the architecture for areas that could be improved, and then implementthose improvements.
+    
+    3. Design architecture diagrams, focus Core infrastructure, using Mermaid,placing the code in code blocks. Make sure the diagrams are easy to understandfor both technical teams and business stakeholders.
+
+    ```
+  * Continue the conversation, develop the Core Infrastructure Diagram into a Technical Detailed version that is detailed and user-friendly for the technical team. Using this prompt:
+    ```
+    Follow up.
+    Using the Core Infrastructure Diagram above, develop a Technical Detailed version covering detailed system integration, component relationships, and infrastructure.
+    This version is optimized for the technical team (especially DevOps), and should be clear and easy to follow for infrastructure deployment.
+    Present the solution in a single diagram.
+    ```
+
+
 * Produce a **Mermaid diagram** (system context) that illustrates component interactions and data flow from user workstations to AWS services.
 * Generate a **Terraform skeleton** for provisioning EC2 instances, EFS file system, IAM role structure, and FreeIPA deployment in AWS.
 * List **performance considerations** (scaling, cost, latency) for each component with bullet justification.
