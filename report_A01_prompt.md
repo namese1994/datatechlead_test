@@ -85,11 +85,56 @@
     Present the solution in a single diagram.
     ```
 
+  * Create a detailed description of the system architecture after manual selection and adjustment of the architecture diagram. Use the following prompt with new GenAI conversation to avoid information overload caused by excessive or redundant details during the design selection process, attach the **ctx_doc_style.md** file so that GenAI complies with the format, and include the mermaid code for the revised architecture in the prompt.
+    ```
+    # ROLE
+    You are an infrastructure architecture expert (Cloud/Data/Platform) and DevOps Tech Lead. 
 
-* Produce a **Mermaid diagram** (system context) that illustrates component interactions and data flow from user workstations to AWS services.
-* Generate a **Terraform skeleton** for provisioning EC2 instances, EFS file system, IAM role structure, and FreeIPA deployment in AWS.
-* List **performance considerations** (scaling, cost, latency) for each component with bullet justification.
-* Summarize **integration points** between platform services and external corporate systems.
+    # Input
+
+    [Main requirement]: Design the complete technical architecture and deployment plan for  an AWS Data Platform that serves as the foundation for a data engineering team
+
+    Below are two fully revised system architecture diagrams (`mermaid`):
+    \<paste 2 mermaid architecture diagram here>
+
+    # Your Task
+
+
+    **Describe the system architecture in detailed written form** to complement the two     provided architecture diagrams, aimed at two audiences:
+
+    * **Business Stakeholders:** need to understand the big picture, value, and risks
+    * **Technical (especially DevOps):** need clarity on each component for deployment and  operations
+
+    # Output Requirements
+
+    Write documentation to complete the following sections, as part of the [Main    requirement].
+
+    1. **Architecture Overview:**
+
+       * Describe the system in logical layers (presentation / data / computation /     storage / etc.), the role and interactions of each component.
+    2. **Technical Analysis:**
+
+       * Reason for choosing each component
+       * Pros/cons
+       * AWS services used (e.g., `EFS`, `EC2`, `IAM`, `Step Functions`, etc.)
+    3. **Cost Estimation:**
+
+       * Monthly cost estimate per component (use tiers: Free Tier, On-demand, Reserved as  applicable)
+    4. **NFS Alternative Proposal:**
+
+       * Suggest 1–2 alternatives if NFS is no longer suitable (scale, throughput, or   availability concerns)
+
+    5. **Connection to Business Goals:**
+
+       * Explain how the architecture supports organizational growth, stability, or scaling
+
+    # Style & Format
+
+    * Use markdown, follow `ctx_doc_style.md`
+    * Clear sections (`##`, `###`, `####`)
+    * Use bullet points instead of long paragraphs
+
+    ```
 
 ---
 

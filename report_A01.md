@@ -186,89 +186,183 @@
     EFS --> BACKUP
     FreeIPA-1a --> BACKUP
   ```
-* **Core AWS services**: EC2, EFS/NFS, IAM, FreeIPA, VPC, Security Groups, CloudWatch, S3.
+* **Core AWS services**: EC2, EFS/NFS, IAM, FreeIPA, VPC, Security Groups, CloudWatch.
 * **Data flow outline**: Bullet list of ingestion → processing → storage → consumption paths.
 * **Scalability & HA strategy**: Auto Scaling groups, Multi‑AZ design, fault‑tolerant components.
-* **Cost considerations**: Bullet list of right‑sizing, reserved instances, storage tiering.
 
 ---
 
 </details>
 
-### Component Design
-
+### Business Perspective
 <details>
-<summary>Detailed specification of each platform component</summary>
+<summary>High-level value and risk view for stakeholders</summary>
 
 ---
 
-#### EC2 User Linux Systems
-
-* Placeholder for instance types, AMI hardening, baseline configuration scripts.
-* Placeholder for bootstrap via cloud‑init & Ansible.
-
----
-
-#### NFS (EFS) Storage Layer
-
-* Placeholder for performance mode, throughput mode, lifecycle policies.
-* Placeholder for mount targets across subnets & security groups.
-
----
-
-#### IAM Roles & Policies
-
-* Placeholder for least‑privilege role matrix, permission boundaries, tagging strategy.
-* Placeholder for MFA enforcement & access key rotation.
+- **Foundation for data-driven growth**
+  - Central platform enables rapid delivery of analytics, ML, and reporting use-cases without each project building bespoke infrastructure.
+- **Cost-aligned elasticity**
+  - Auto-scaling workloads and pay-per-use storage (`EFS`, `EC2 ASG`) avoid sunk hardware costs while scaling up for peak campaigns.
+- **Security & compliance by design**
+  - Private subnets, IAM-least-privilege, FreeIPA SSO, and KMS encryption mitigate data-breach, insider, and regulatory risks.
+- **Operational resilience**
+  - Multi-AZ deployment, managed backups, and health-checked load balancers minimize downtime that could delay business insights.
+- **Fast developer onboarding**
+  - Session Manager browser SSH removes VPN friction; central secrets rotation and standard images let engineers ship faster.
+- **Key business risks**
+  - Cloud cost overrun if auto-scaling limits mis-tuned.
+  - Talent dependency on specialised AWS skills; mitigation: IaC & runbooks.
 
 ---
-
-#### FreeIPA Directory Service
-
-* Placeholder for architecture (HA replicas, subnet placement).
-* Placeholder for authentication flow, SSSD configuration on EC2.
-
----
-
-#### Monitoring & Logging Stack
-
-* Placeholder for CloudWatch metrics, custom dashboards, alerting rules.
-* Placeholder for centralized log aggregation (CloudWatch Logs / OpenSearch).
-
----
-
 </details>
 
-### Network Architecture
-
+### Technical Perspective
 <details>
-<summary>Subnet layout, routing, security groups, and connectivity</summary>
+<summary>Logical layers, traffic flow, and component roles</summary>
 
 ---
 
-* VPC CIDR block & subnet tier breakdown (public, private, isolated).
-* Ingress & egress traffic flow bullets (NAT Gateway, Internet Gateway).
-* Security Group matrix (`TODO` add table) outlining allowed ports between components.
-* Load Balancer choices (ALB/NLB) and health check design.
-* Private connectivity options: AWS PrivateLink, Transit Gateway, Site‑to‑Site VPN.
+#### Presentation / Access Layer
+- **Network Load Balancer (NLB)**
+  - Terminates external `443/HTTPS`, `22/SSH`, `389/LDAP`, distributes to private subnets.
+- **AWS Session Manager**
+  - Browser-based bastion; no inbound SG rules required.
 
 ---
+#### Computation Layer
+- **EC2 Auto Scaling Groups**
+  - `m5.xlarge` worker fleet in AZ-1a & AZ-1b; host Spark, dbt, Airflow, or custom pipelines.
+  - User-data bootstraps from hardened AMI; registered in FreeIPA.
+- **FreeIPA Directory**
+  - Master/replica pair provides LDAP/Kerberos auth & sudo policies.
 
+---
+#### Storage Layer
+- **Amazon EFS**
+  - Multi-AZ, AES-256 encrypted, burst or provisioned throughput NFS share for pipeline staging & shared datasets.
+- **S3 (via gateway endpoint)**
+  - Raw & curated data lake buckets (not shown on diagram for brevity).
+
+---
+#### Security & Operations Layer
+- **AWS Secrets Manager**
+  - Centralised credential store with 30-day rotation.
+- **CloudWatch & CloudWatch Logs**
+  - Metric/alarm dashboards, log retention 90 days; events forward to PagerDuty.
+- **AWS Backup**
+  - Daily backups (7 days) + weekly (4 weeks) for EFS & FreeIPA EBS.
+- **Systems Manager Patch Manager**
+  - Automatic CVE patch waves (dev → prod) with change calendar.
+
+---
+#### Network & Connectivity
+- **VPC (10.0.0.0/16)**
+  - Public subnets (NLB + NAT), private app subnets (workers, FreeIPA), private data subnets (EFS MT).
+- **VPC Private Endpoints**
+  - SSM, S3, SecretsManager eliminate NAT cost for control-plane calls.
+- **NAT Gateway**
+  - Outbound internet for package mirrors and third-party APIs; one per AZ for HA.
+
+---
 </details>
 
-### Data Flow & Integration Diagram
+---
+## Technical Analysis
+---
 
+### Component Rationale
 <details>
-<summary>Mermaid diagrams for component interaction and data lifecycle</summary>
+<summary>Why each service was selected and trade-offs</summary>
 
 ---
 
-* `TODO` Mermaid diagram for ingest → process → store workflow.
-* `TODO` Sequence diagram for authentication via IAM & FreeIPA.
-* Placeholder bullet for cross‑account access pattern.
+#### Compute (`EC2 + ASG`)
+- *Pros*: Full OS control (POSIX ACLs, GPU option), mature FreeIPA integration.
+- *Cons*: Ops overhead vs. managed EMR/EKS; step-functionless recovery scripts needed.
+
+---
+#### Directory (FreeIPA on EC2)
+- *Pros*: Open-source, multi-protocol (LDAP/Kerberos), integrates with on-prem AD.
+- *Cons*: Self-managed patching; consider AWS Managed Microsoft AD for pure AD shops.
+
+---
+#### Storage (`EFS`)
+- *Pros*: Shared POSIX file-system semantics, sub-second fail-over across AZs.
+- *Cons*: Pricey at scale; maximum 10 GB/s; metadata-heavy workloads may hit IOP caps.
+
+---
+#### Network Load Balancer
+- *Pros*: L4 performance, static IPs, 20 ms TLS termination.
+- *Cons*: No WAF/L7 rules—pair with Network Firewall if needed.
+
+---
+#### Secrets Manager vs. Parameter Store
+- *Pros*: Native rotation lambda, KMS envelope encryption.
+- *Cons*: Higher $ per secret; small secrets cache may incur latency.
+
+---
+#### CloudWatch
+- *Pros*: Native agent, cross-service correlations, single bill.
+- *Cons*: 5 GB free logs only; retention fees accumulate—plan log lifecycle.
+
+---
+</details>
+
+---
+## Cost Estimation
+---
+
+### Indicative Monthly Spend (ap-southeast-1)
+<details>
+<summary>On-demand with 1-year Standard RI where noted</summary>
 
 ---
 
+- **Compute**
+  - Assume 8 × `m5.xlarge` (50 % RI) → `$2,600`
+  - 2 × `c5.large` FreeIPA → `$134`
+- **EFS**
+  - 5 TB standard + 500 MiB/s provisioned → `$1,350`
+- **NLB (2 AZ)**
+  - LCU & data → `$120`
+- **NAT Gateways (2)**
+  - 2 × `$32.40` + 1 TB data → `$190`
+- **CloudWatch**
+  - 200 GB logs ingested + 90 days retention → `$70`
+- **Secrets Manager**
+  - 50 active secrets → `$60`
+- **AWS Backup**
+  - 5 TB EFS snapshots (incremental) → `$100`
+- **SSM & Endpoints**
+  - Sessions & endpoints (minimal) → `$20`
+- **Total (approx.)**
+  - **`$4,644`/month**  
+    - *50 % savings potential* via Graviton instances, Smart Tier on EFS, and Compute Savings Plans.
+
+---
+</details>
+
+---
+## NFS Alternative Proposal
+---
+
+### When EFS Caps Are Hit
+<details>
+<summary>Higher throughput, bigger dataset, or global access needs</summary>
+
+---
+
+#### Alternative 1 – Amazon FSx for Lustre
+- *Why*: Up to `100 GB/s` & millions IOPS; tight S3 integration for lakehouse exports.
+- *Impact*: Requires client driver; bursty cost model per GB / throughput unit.
+
+---
+#### Alternative 2 – Delta Lake on Amazon S3 + EMR Serverless
+- *Why*: Object storage scales virtually unlimited; ACID via `delta-spark` without shared NFS.
+- *Impact*: Migration of pipeline code to Spark/DataFrames; no POSIX file locks.
+
+---
 </details>
 
 ---
