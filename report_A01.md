@@ -1,3 +1,7 @@
+---
+title: report_a01
+---
+
 ## Technical Architecture
 
 ---
@@ -8,7 +12,6 @@
 <summary>Comprehensive description of the AWS Data Platform foundation</summary>
 
 ---
-
 
 * **Purpose**: <em>Describe the high‑level objectives of the data platform (analytics, ML, BI, etc.).</em>
 * **High‑level Infrastructure Diagram**: Diagram summarizing core services.
@@ -195,6 +198,7 @@
 </details>
 
 ### Business Perspective
+
 <details>
 <summary>High-level value and risk view for stakeholders</summary>
 
@@ -215,9 +219,11 @@
   - Talent dependency on specialised AWS skills; mitigation: IaC & runbooks.
 
 ---
+
 </details>
 
 ### Technical Perspective
+
 <details>
 <summary>Logical layers, traffic flow, and component roles</summary>
 
@@ -265,6 +271,7 @@
   - Outbound internet for package mirrors and third-party APIs; one per AZ for HA.
 
 ---
+
 </details>
 
 ---
@@ -274,6 +281,7 @@
 ---
 
 ### Component Rationale
+
 <details>
 <summary>Why each service was selected and trade-offs</summary>
 
@@ -309,11 +317,10 @@
 - *Cons*: 5 GB free logs only; retention fees accumulate—plan log lifecycle.
 
 ---
+
 </details>
 
----
 ### NFS Alternative Proposal
----
 
 <details>
 <summary>When EFS Caps Are Hit. Need higher throughput, bigger dataset, or global access needs</summary>
@@ -330,6 +337,7 @@
 - *Impact*: Migration of pipeline code to Spark/DataFrames; no POSIX file locks.
 
 ---
+
 </details>
 
 ---
@@ -339,6 +347,7 @@
 ---
 
 ### Indicative Monthly Spend (ap-southeast-1)
+
 <details>
 <summary>On-demand with 1-year Standard RI where noted</summary>
 
@@ -366,13 +375,20 @@
     - *50 % savings potential* via Graviton instances, Smart Tier on EFS, and Compute Savings Plans.
 
 ---
+
 </details>
 
 ---
 
 ## Deployment chronology
+
+---
+
 <details>
 <summary>project deployment chronology step by step</summary>
+
+---
+
 ```mermaid
 gantt
     title AWS Data Platform – Deployment Chronology (Assume kick off date is 7-7-2025)
@@ -420,12 +436,18 @@ gantt
     Documentation & Knowledge Transfer [All] :milestone, task_docs, after task_cost, 2d
 
 ```
+
+---
+
 </details>
+
+---
+
 ## Infrastructure as Code (Terraform)
 
 ---
 
-### terraform\_component\_list
+### Terraform Component List
 
 <details>
 <summary>All resources provisioned via Terraform</summary>
@@ -475,10 +497,8 @@ gantt
 
 </details>
 
----
 
-
-### ansible\_component\_list
+### Ansible Component List
 
 <details>
 <summary>All configuration and operations handled by Ansible</summary>
@@ -523,17 +543,14 @@ gantt
 
 </details>
 
-
-### terraform\_deployment\_groups
-
----
-
-#### group\_1\_identity\_and\_access
+### Terraform Deployment Groups
 
 <details>
-<summary>Provision shared security primitives first</summary>
+<summary>Terraform Deployment Groups</summary>
 
 ---
+
+#### group 1 identity and access
 
 * create backend `S3` bucket + `DynamoDB` lock table for remote state
 * deploy organisation or account-level `IAM` roles, instance profiles, and least-privilege `policies`
@@ -543,14 +560,7 @@ gantt
 
 ---
 
-</details>
-
-#### group\_2\_stable\_core\_infrastructure
-
-<details>
-<summary>Lay down networking and other rarely-changing foundations</summary>
-
----
+#### group 2 stable core infrastructure
 
 * create single `VPC (10.0.0.0/16)` with four application sub-nets + one endpoints sub-net
 * attach `Internet Gateway`, route tables, `NAT Gateways` (one per AZ)
@@ -562,14 +572,7 @@ gantt
 
 ---
 
-</details>
-
-#### group\_3\_change\_prone\_compute\_and\_services
-
-<details>
-<summary>Spin up compute, load-balancing, and ops resources</summary>
-
----
+#### group 3 change prone compute and services
 
 * build `EC2 Launch Templates` referencing golden AMIs and `iam_instance_profiles` from Group 1
 * create `Auto Scaling Groups` for data-worker fleet across private-app sub-nets
@@ -584,18 +587,14 @@ gantt
 
 </details>
 
----
-
-### ansible\_deployment\_phases
-
----
-
-#### phase\_a\_freeipa\_bootstrap
+### Ansible Deployment Phases
 
 <details>
-<summary>Configure identity backbone before touching workers</summary>
+<summary>Ansible Deployment Phases</summary>
 
 ---
+
+#### phase a freeipa bootstrap
 
 * harden OS, install `freeipa-server` packages on master node
 * initialise FreeIPA domain, enable replication ports, create admin service accounts
@@ -603,14 +602,7 @@ gantt
 
 ---
 
-</details>
-
-#### phase\_b\_worker\_os\_baseline
-
-<details>
-<summary>Prepare all worker nodes for platform runtimes</summary>
-
----
+#### phase b worker os baseline
 
 * apply CIS level-1 hardening, configure `chrony`, `auditd`, and required kernel params
 * install `Docker` (or `containerd`), `Java 11`, `Python 3.x`, `Scala`, and common libs
@@ -619,14 +611,7 @@ gantt
 
 ---
 
-</details>
-
-#### phase\_c\_platform\_runtime\_deploy
-
-<details>
-<summary>Lay down Spark, dbt, Airflow, and custom pipelines</summary>
-
----
+#### phase c platform runtime deploy
 
 * pull signed images from `ECR` and load into local container runtime
 * render config files from templates, injecting secrets via `aws-secretsmanager` lookup
@@ -635,14 +620,7 @@ gantt
 
 ---
 
-</details>
-
-#### phase\_d\_day\_2\_operations
-
-<details>
-<summary>Enable ongoing maintenance and updates</summary>
-
----
+#### phase d day 2 operations
 
 * configure `SSM Patch Manager` baseline tags and Ansible playbook hooks
 * schedule rolling AMI or container updates through Ansible AWX pipelines
@@ -653,18 +631,14 @@ gantt
 
 </details>
 
----
-
-### orchestration\_flow
-
----
-
-#### workflow\_summary
+### Orchestration Flow
 
 <details>
-<summary>End-to-end execution order and gating logic</summary>
+<summary>Orchestration Flow</summary>
 
 ---
+
+#### Workflow Summary
 
 * run `terraform init/plan/apply` for **Group 1** → obtain remote-state backend & `kms` keys
 * run `terraform apply` for **Group 2** (depends on Group 1 outputs)
@@ -679,11 +653,11 @@ gantt
 
 ---
 
-## repo\_structure
+## Repo Structure
 
 ---
 
-### terraform\_repository
+### Terraform Repository
 
 <details>
 <summary>Directory layout and content owned by Terraform</summary>
@@ -726,7 +700,7 @@ gantt
 
 ---
 
-#### modules\_breakdown
+#### Modules Breakdown
 
 * `modules/vpc` – parametrised multi-AZ VPC with route-tables & NACLs
 * `modules/sg` – opinionated security-group factory with rule lists
@@ -738,7 +712,7 @@ gantt
 
 </details>
 
-### ansible\_repository
+### Ansible Repository
 
 <details>
 <summary>Playbooks, roles, inventory, and AMI bake pipeline</summary>
@@ -785,7 +759,7 @@ gantt
 
 ---
 
-#### role\_conventions
+#### role conventions
 
 * self-contained roles with `tasks/handlers/defaults/vars/templates/files`
 * idempotency validated in `check_mode` pipelines
@@ -795,7 +769,7 @@ gantt
 
 </details>
 
-### shared\_ci\_cd
+### Shared CICD
 
 <details>
 <summary>Cross-tooling pipelines and developer ergonomics</summary>
@@ -820,10 +794,9 @@ gantt
 
 ## Access Control & Security Architecture
 
-
 ---
 
-### iam\_role\_catalog
+### IAM Role Catalog
 
 <details>
 <summary>Key IAM roles & purpose</summary>
@@ -846,11 +819,7 @@ gantt
 
 </details>
 
----
-
-### iam\_principal\_policies
-
----
+### IAM Principal Policies
 
 <details>
 <summary>Least-privilege boundaries & rotation controls</summary>
@@ -869,9 +838,10 @@ gantt
 
 </details>
 
----
+### RACI Matrix
 
-### raci\_matrix
+<details>
+<summary>RACI Matrix</summary>
 
 ---
 
@@ -889,7 +859,12 @@ gantt
 
 ---
 
-### security\_group\_strategy
+</details>
+
+### Security Group Strategy
+
+<details>
+<summary>Security Group Strategy</summary>
 
 ---
 
@@ -905,7 +880,12 @@ gantt
 
 ---
 
-### authentication\_flow
+</details>
+
+### Authentication Flow
+
+<details>
+<summary>Authentication Flow</summary>
 
 ---
 
@@ -926,7 +906,12 @@ gantt
 
 ---
 
-### tool\_reference
+</details>
+
+### Tool Reference
+
+<details>
+<summary>Tool Reference</summary>
 
 ---
 
@@ -938,14 +923,20 @@ gantt
 
 ---
 
-## System Integration
-
-<details>
-<summary>System integration: connectivity, data flows, and network architecture</summary>
+</details>
 
 ---
 
-### Core system components
+## System Integration
+
+---
+
+### Core System Components
+
+<details>
+<summary>Core System Components</summary>
+
+---
 
 * **Compute nodes** – `EC2 Auto Scaling Workers`, `FreeIPA Master`, `FreeIPA Replica`, `CodeBuild / CodePipeline` containers
 * **Networking** – `Network Load Balancers`, `Internet Gateway`, `NAT Gateways`, `VPC Interface Endpoints (SSM, Secrets Manager)`, `VPC Gateway Endpoint (S3)`, `Route 53` private zone
@@ -956,7 +947,14 @@ gantt
 
 ---
 
+</details>
+
 ### Components Connectivity relationships
+
+<details>
+<summary>Components Connectivity relationships</summary>
+
+---
 
 * **Users → NLB**: `HTTPS/443`
 * **Engineers → SSM VPCE**: `TLS` (SSM StartSession)
@@ -974,7 +972,14 @@ gantt
 
 ---
 
+</details>
+
 ### End-to-end data flows
+
+<details>
+<summary>End-to-end data flows</summary>
+
+---
 
 * **Ingestion**: external uploads or API pulls → `S3 raw`
 * **Processing**: Airflow triggers Spark → read `S3 raw`, stage on `EFS`, write `S3 staged` → dbt → `S3 curated`
@@ -985,7 +990,14 @@ gantt
 
 ---
 
+</details>
+
 ### Network segmentation & security zones
+
+<details>
+<summary>End-to-end data flows</summary>
+
+---
 
 * **Public subnets** – NLB, NAT; inbound limited to 443/22/389
 * **Private-App subnets** – workers, FreeIPA; east-west limited to LDAP/Kerberos/NFS; outbound via NAT
@@ -995,7 +1007,14 @@ gantt
 
 ---
 
+</details>
+
 ### Network & data-flow diagram
+
+<details>
+<summary>Network & data-flow diagram</summary>
+
+---
 
 ```mermaid
 graph TD
@@ -1053,10 +1072,9 @@ graph TD
 
 ## Operational Procedures
 
-<details>
-<summary>Operational Procedures: monitoring, backup, and maintenance</summary>
+---
 
-### metrics\_alarms\_dashboards
+### Metrics alarms dashboards
 
 <details>
 <summary>Key metrics, alarm thresholds, and CloudWatch dashboards</summary>
@@ -1099,7 +1117,7 @@ graph TD
 
 </details>
 
-### logging\_flows
+### Logging flows
 
 <details>
 <summary>Log generation, destinations, and retention</summary>
@@ -1121,7 +1139,7 @@ graph TD
 
 </details>
 
-### alerting\_escalation
+### Alerting escalation
 
 <details>
 <summary>Alert routing, escalation paths, and run-books</summary>
@@ -1157,7 +1175,7 @@ graph TD
 
 ---
 
-### backup\_coverage
+### Backup coverage
 
 <details>
 <summary>Resources protected & backup mechanism</summary>
@@ -1192,7 +1210,7 @@ graph TD
 
 </details>
 
-### retention\_schedule
+### Retention schedule
 
 <details>
 <summary>Frequency & retention policies</summary>
@@ -1212,7 +1230,7 @@ graph TD
 
 </details>
 
-### restore\_and\_validation
+### Restore and validation
 
 <details>
 <summary>Restore drills & integrity checks</summary>
@@ -1248,7 +1266,7 @@ graph TD
 
 ---
 
-### patch\_management
+### Patch management
 
 <details>
 <summary>How & when patches are applied</summary>
@@ -1280,7 +1298,7 @@ graph TD
 
 </details>
 
-### health\_checks\_and\_drift\_detection
+### Health checks and drift detection
 
 <details>
 <summary>Continuous validation of system state</summary>
@@ -1308,7 +1326,7 @@ graph TD
 
 </details>
 
-### incident\_response
+### Incident response
 
 <details>
 <summary>Detection ➜ containment ➜ recovery workflow</summary>
@@ -1337,7 +1355,7 @@ graph TD
 
 </details>
 
-### routine\_automation\_tasks
+### Routine automation tasks
 
 <details>
 <summary>Scheduled tasks & housekeeping</summary>
@@ -1373,14 +1391,12 @@ graph TD
 
 ---
 
-</details>
-
----
-
 ## Implementation Plan & Timeline
+
 ---
 
 ### Team legend
+
 <details>
 <summary>Roles & primary skill domains</summary>
 
@@ -1417,9 +1433,7 @@ graph TD
 
 </details>
 
----
-
-### sprint_backlog
+### Sprint_backlog
 <details>
 <summary>Major deliverables by week</summary>
 
@@ -1430,17 +1444,23 @@ graph TD
 - EFS-Dev provisioned, KMS encryption verified
 - CI pipeline & linting in place
 
+---
+
 #### **Sprint 2 (Weeks 3-4)**
 - NLB listeners & hardened SGs deployed
 - ASG-Dev smoke test passes
 - Raw & curated **S3 buckets** with lifecycle + SSE-KMS
 - Secrets Manager rotation & **env separation** established
 
+---
+
 #### **Sprint 3 (Weeks 5-6)**
 - Stage environment cloned via IaC
 - **Autoscale scale-out/in & NLB cross-AZ fail-over** tested
 - **Synthetic workload** runs against Stage; **EFS I/O stress test** logged
 - DR docs, tfsec/cfn-nag scans, cost alerts green
+
+---
 
 #### **Sprint 4 (Weeks 7-8)**
 - Production blue/green deployment & smoke
@@ -1452,9 +1472,13 @@ graph TD
 
 </details>
 
+### Roadmap and milestones
+
+<details>
+<summary>Roadmap and milestones</summary>
+
 ---
 
-### Roadmap and milestones
 ```mermaid
 gantt
     title AWS Data Platform – Sprint-based Milestone Roadmap (2025)
@@ -1482,14 +1506,12 @@ gantt
 
 ---
 
-### blocker\_strategy
+</details>
 
----
-
-#### mitigation
+### Blocker mitigation strategy 
 
 <details>
-<summary>Top risks & mitigations</summary>
+<summary>Blocker mitigation strategy</summary>
 
 ---
 
@@ -1506,11 +1528,7 @@ gantt
 
 </details>
 
----
-
-### buffer\_pto
-
----
+### Buffer pto
 
 <details>
 <summary>Incident & PTO handling</summary>
@@ -1552,8 +1570,6 @@ gantt
 
 </details>
 
----
-
 ### Communication Artefacts
 <details>
 <summary>Core mechanisms used to communicate infrastructure status and progress</summary>
@@ -1574,9 +1590,6 @@ gantt
 ---
 
 </details>
-
----
-
 
 ### Communication Best Practices
 <details>
@@ -1615,9 +1628,6 @@ gantt
 ---
 </details>
 
----
-
-
 ### Cadence & Escalation Rules
 <details>
 <summary>Structured timetable for stakeholder communications</summary>
@@ -1649,6 +1659,8 @@ gantt
 ## Technical risk management
 
 ---
+
+### Infrastructure risk management
 
 <details>
 <summary>Infrastructure risk overview and mitigation strategies</summary>
@@ -1799,4 +1811,3 @@ gantt
 ---
 
 </details>
-

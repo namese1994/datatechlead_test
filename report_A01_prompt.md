@@ -1,4 +1,12 @@
-## Technical Architecture
+---
+title: report_a01_prompt
+---
+
+## Prompt catalog
+
+---
+
+### Technical Architecture
 
 <details>
 <summary>Generate comprehensive AWS Data Platform architecture content</summary>
@@ -136,7 +144,7 @@
 
 </details>
 
-## Deployment chronology
+### Deployment chronology
 <details>
 <summary>Determine project deployment chronology</summary>
 
@@ -168,11 +176,11 @@
 
   ```
 
-</details>
-
 ---
 
-## Automation & IaC
+</details>
+
+### Automation & IaC
 
 <details>
 <summary>Produce Infrastructure as Code and configuration management snippets</summary>
@@ -221,11 +229,12 @@
 
   Remmember: Use markdown, follow `ctx_doc_style.md`
   ```
+
 ---
 
 </details>
 
-## Access Control & Security
+### Access Control & Security
 
 <details>
 <summary>Design IAM, authentication flow, and security hardening content</summary>
@@ -266,9 +275,12 @@
 
 </details>
 
-## System integration documentation
+### System integration documentation
+
 <details>
 <summary>Design System integration documentation</summary>
+
+---
 
 * Create System integration documentation by using this prompt by continuing the above conversation. Interact with GenAI to confirm or refine each step
   
@@ -318,12 +330,12 @@
 
 </details>
 
----
-
-## Operational Procedures
+### Operational Procedures
 
 <details>
 <summary>Design Operational Procedures</summary>
+
+---
 
 *  Create System integration documentation by using this prompt by continuing the above conversation. Interact with GenAI to confirm or refine each step
   ```
@@ -374,9 +386,12 @@
   Remember: Use markdown, and strictly follow the documentation ctx_doc_style.md. 
 
   ```
+
 ---
 
-## Team implementation guidance and Project timeline management 
+</details>
+
+### Team implementation guidance and Project timeline management 
 
 <details>
 <summary>Create detailed Project timeline management  and resource allocation</summary>
@@ -466,12 +481,13 @@
 
 </details>
 
-##  Technical stakeholder communication
+###  Technical stakeholder communication
 
 <details>
 <summary> Explain infrastructure progress to business leaders</summary>
 
 ---
+
 ```
 # Role
 
@@ -517,7 +533,7 @@ Remember: Use markdown and follow the documentation style guidelines from ctx_do
 
 </details>
 
-## Technical risk management
+### Technical risk management
 
 <details>
 <summary>Generate infrastructure risk table and mitigation strategies</summary>
@@ -562,11 +578,7 @@ Use markdown and follow the documentation style from ctx_doc_style.md.
 
 </details>
 
----
-
-## Team technical development
-
----
+### Team technical development
 
 <details>
 <summary>Upskill DevOps engineers during platform implementation</summary>
