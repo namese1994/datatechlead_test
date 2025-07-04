@@ -290,11 +290,35 @@
 
 ---
 
-* Generate **IAM role and policy bullet lists** mapping platform roles to least‑privilege permissions.
-* Craft **authentication flow description** integrating FreeIPA with AWS via IAM Identity Provider.
-* Produce **Mermaid sequence diagram** illustrating user login, token exchange, and resource access.
-* List **security group rules** (inbound/outbound) for EC2, FreeIPA, and NFS nodes with rationale.
-* Suggest **compliance checks** (CIS benchmarks, AWS Config rules) and automated remediation actions.
+* Create **Access control architecture** by continuing the above conversation, leveraging the context of the previous conversation (Requires using GenAI models with contexts longer than 32K tokens to avoid truncation)
+  ```
+  Follow up.
+
+  # Role
+  You are a senior AWS solutions architect and technical writer.
+
+  # Task
+  Please generate the "Access control architecture" documentation section for our AWS Data Platform.
+
+  # Instrution
+  Follow these requirements:
+
+  * Focus: IAM roles, IAM policies, security groups, authentication flow design.
+  * Depth:
+
+    * Briefly describe each key IAM role (examples: service roles, instance profiles, admin vs. engineer roles, CI/CD pipeline roles).
+    * Outline principal IAM policies (least-privilege, access boundaries, rotation).
+    * Use RACI table with following roles:  Project Manager ; Tech Lead ; DevOps Engineer ; Data Engineer ; Security Engineer ; Auditor
+    * Summarize security group strategy (segmentation, tiering).
+    * Bullet the authentication flow from user access through service authentication to backend resources.
+    * Reference AWS native tools: Secrets Manager, Session Manager, FreeIPA, etc.
+
+  * Constraints:
+
+    * No prose paragraphs, only bullet points.
+    * Avoid vendor marketing language—focus on architectural choices and rationale.
+    * Follow the documentation style and bullet structure as shown in the system docs above.
+  ```
 
 ---
 

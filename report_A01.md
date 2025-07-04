@@ -935,7 +935,123 @@ gantt
 
 ---
 
-## Access Control & Security
+## Access Control & Security Architecture
+
+
+---
+
+### iam\_role\_catalog
+
+<details>
+<summary>Key IAM roles & purpose</summary>
+
+---
+
+* **`AdminRole`** — break-glass privileges; MFA enforced; no persistent keys
+* **`TechLeadRole`** — change-management approve/merge; read/write TF state; CloudWatch dashboards
+* **`DevOpsRole`** — full CRUD on Terraform state bucket, CodeBuild/CodePipeline, ECR; no direct data-lake access
+* **`DataEngineerRole`** — read/write S3 data-lake buckets; start/stop Airflow & Spark jobs; assume via FreeIPA + SSO
+* **`SecurityEngineerRole`** — GuardDuty, Config, IAM Access Analyzer, KMS key-admin; cannot alter workload resources
+* **`AuditorRole`** — CloudTrail, Config read-only; cannot change encryption keys or SGs
+* **`EC2WorkerInstanceProfile`** — scoped to S3 path-mappings, EFS mount, SecretsMgr read, CloudWatch putMetrics
+* **`FreeIPAInstanceProfile`** — SecretsMgr read (directory bootstrap), KMS decrypt on FreeIPA-EBS key
+* **`CICDPipelineRole`** — assume by CodeBuild; limited to ECR push, Terraform plan/apply via OIDC trust
+* **`BackupServiceRole`** — managed by AWS Backup; scoped to copy EFS & EBS snapshots to vault
+* **`SessionManagerRole`** — SSM core + ssm\:StartSession only on tagged bastionless instances
+
+---
+
+</details>
+
+---
+
+### iam\_principal\_policies
+
+---
+
+<details>
+<summary>Least-privilege boundaries & rotation controls</summary>
+
+---
+
+* **Access boundaries** on human roles → deny outside `ap-southeast-1`, production VPC tag safeguard
+* **Managed policies** version-pinned; no wildcard `*` actions except AWS-managed `ReadOnlyAccess`
+* **KMS key policies** delegate to roles, not users; mandatory encryption on S3/EFS/EBS
+* **Secrets rotation** → Secrets Manager 30-day schedule; Lambda rotation function via `CICDPipelineRole`
+* **IAM creds** — no IAM users; all CLI/API via federated SSO (AWS IAM Identity Center) + MFA
+* **Session policies** — 8-hour duration max; condition keys `aws:RequestedRegion`, `aws:TagKeys`
+* **SCPs** at OU level — deny `iam:CreateAccessKey`, enforce `kms:Encrypt` on all `s3:PutObject`
+
+---
+
+</details>
+
+---
+
+### raci\_matrix
+
+---
+
+| Task / Artifact                     | Project Manager | Tech Lead | DevOps Engineer | Data Engineer | Security Engineer | Auditor |
+| ----------------------------------- | :-------------: | :-------: | :-------------: | :-----------: | :---------------: | :-----: |
+| Define IAM roles & policies         |        A        |     R     |        C        |       C       |         I         |    I    |
+| Implement Terraform IAM modules     |        I        |     C     |        R        |       I       |         C         |    A    |
+| Approve production policy changes   |        C        |     R     |        I        |       I       |         A         |    I    |
+| Review CloudTrail / Config findings |        I        |     I     |        C        |       I       |         R         |    A    |
+| SG rule change requests             |        I        |     R     |        C        |       C       |         A         |    I    |
+| Secrets rotation verification       |        I        |     C     |        R        |       I       |         A         |    I    |
+| Audit access reports & evidence     |        I        |     I     |        C        |       I       |         R         |    A    |
+
+*R = Responsible A = Accountable C = Consulted I = Informed*
+
+---
+
+### security\_group\_strategy
+
+---
+
+* **Tiered SG model**
+
+  * **edge-sg** → NLB listeners; ingress only 443/22/389 from `0.0.0.0/0` with AWS WAF future hook
+  * **app-sg** → worker ASG; allow NFS 2049 from `data-sg`, LDAP 389 from **auth-sg**, egress 443 to VPC endpoints
+  * **auth-sg** → FreeIPA; ingress 22/389/636 from **app-sg**, replication 389 from peers, egress 443 to SecretsMgr
+  * **data-sg** → EFS mount targets; ingress 2049 from **app-sg** only
+* **No public inbound** to EC2; admin access via SSM Session Manager tunnel
+* **Self-service rules** denied; changes via Terraform MR + security review
+* **Default-deny** outbound except required AWS services (VPC endpoints, NAT range)
+
+---
+
+### authentication\_flow
+
+---
+
+* **User login**: IAM Identity Center (SAML/OIDC) → assume `TechLeadRole` / `DevOpsRole` / `DataEngineerRole` with MFA
+* **Bastionless access**: AWS SSM Session Manager → attach `SessionManagerRole` → start session within worker VPC
+* **Service auth**:
+
+  * EC2 userdata fetches temporary creds via instance profile (`EC2WorkerInstanceProfile`)
+  * Application containers pull secrets (`db.password`, `api_key`) from Secrets Manager with role-based Decrypt
+  * Apps mount EFS using TLS + IAM POSIX UID mapping
+* **Inter-service auth**:
+
+  * Workers authenticate to FreeIPA using Kerberos tickets (forwardable)
+  * FreeIPA replication secured by GSS-API over 389/TCP
+* **Data access**: Spark/dbt jobs assume `DataPipelineExecutionRole` (derived from worker profile) → S3 access with IAM condition keys `s3:prefix=${project}/`
+* **Monitoring & backup**: CloudWatch agent uses signed OpenTelemetry endpoint; Backup Service Role snapshots EFS/EBS encrypted with KMS key
+* **Audit trail**: CloudTrail + Session Manager logs → centralized S3, immutable via Object Lock, analyzed by Athena
+
+---
+
+### tool\_reference
+
+---
+
+* **AWS Secrets Manager** — credential store & rotation
+* **AWS Session Manager** — bastionless SSH/RDP; logging to CloudWatch & S3
+* **FreeIPA** — centralized LDAP/Kerberos + HBAC policies
+* **IAM Access Analyzer** — detect public or cross-account access drift
+* **AWS Config** — conformance packs checking SG open ports, unencrypted resources
 
 ---
 
