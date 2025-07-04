@@ -11,7 +11,7 @@
 
 
 * **Purpose**: <em>Describe the high‑level objectives of the data platform (analytics, ML, BI, etc.).</em>
-* **High‑level Architecture Diagram**: Diagram summarizing core services.
+* **High‑level Infrastructure Diagram**: Diagram summarizing core services.
   
   ```mermaid
   graph TB
@@ -268,7 +268,9 @@
 </details>
 
 ---
+
 ## Technical Analysis
+
 ---
 
 ### Component Rationale
@@ -310,7 +312,30 @@
 </details>
 
 ---
+### NFS Alternative Proposal
+---
+
+<details>
+<summary>When EFS Caps Are Hit. Need higher throughput, bigger dataset, or global access needs</summary>
+
+---
+
+#### Alternative 1 – Amazon FSx for Lustre
+- *Why*: Up to `100 GB/s` & millions IOPS; tight S3 integration for lakehouse exports.
+- *Impact*: Requires client driver; bursty cost model per GB / throughput unit.
+
+---
+#### Alternative 2 – Delta Lake on Amazon S3 + EMR Serverless
+- *Why*: Object storage scales virtually unlimited; ACID via `delta-spark` without shared NFS.
+- *Impact*: Migration of pipeline code to Spark/DataFrames; no POSIX file locks.
+
+---
+</details>
+
+---
+
 ## Cost Estimation
+
 ---
 
 ### Indicative Monthly Spend (ap-southeast-1)
@@ -344,63 +369,168 @@
 </details>
 
 ---
-## NFS Alternative Proposal
----
-
-### When EFS Caps Are Hit
-<details>
-<summary>Higher throughput, bigger dataset, or global access needs</summary>
-
----
-
-#### Alternative 1 – Amazon FSx for Lustre
-- *Why*: Up to `100 GB/s` & millions IOPS; tight S3 integration for lakehouse exports.
-- *Impact*: Requires client driver; bursty cost model per GB / throughput unit.
-
----
-#### Alternative 2 – Delta Lake on Amazon S3 + EMR Serverless
-- *Why*: Object storage scales virtually unlimited; ACID via `delta-spark` without shared NFS.
-- *Impact*: Migration of pipeline code to Spark/DataFrames; no POSIX file locks.
-
----
-</details>
-
----
 
 ## Implementation Plan & Timeline
-
 ---
 
-### Deployment Chronology
-
+### Team legend
 <details>
-<summary>Step‑by‑step technical timeline for 8‑week rollout</summary>
+<summary>Roles & primary skill domains</summary>
 
 ---
 
-* **Week 1**: Requirements confirmation, VPC scaffolding, Terraform repo bootstrap.
-* **Week 2**: IAM baseline roles/policies, EC2 base AMIs, FreeIPA proof‑of‑concept.
-* **Week 3**: EFS creation & performance testing, security groups hardened.
-* **Week 4**: Terraform modules finalized, code review & CI/CD integration.
-* **Week 5**: Ansible playbooks for OS hardening, application baseline setup.
-* **Week 6**: Monitoring stack deployment, CloudWatch alarms, logging sinks.
-* **Week 7**: Load testing, failover drills, security audit, cost optimization review.
-* **Week 8**: Final production cut‑over, documentation handoff, stakeholder sign‑off.
+| Abbr. | Focus | Key Responsibilities |
+|-------|-------|----------------------|
+| **PM** | Project Mgr / Scrum Master | Ceremonies, backlog, blockers |
+| **E1** | Networking & IaC | VPC, SGs, Terraform core |
+| **E2** | Compute & Auth | EC2 ASG, FreeIPA |
+| **E3** | Storage & DR | EFS, AWS Backup, S3 |
+| **E4** | CI/CD & Observability | GitHub Actions, CloudWatch, cost alerts |
 
 ---
 
 </details>
 
-### Milestone & Deliverable Table
+--- 
 
+### Team allocation_matrix
 <details>
-<summary>Key checkpoints, owners, and success criteria</summary>
+<summary>Engineer tasks per sprint (all work ≈ 85 % capacity)</summary>
 
 ---
 
-* `TODO` insert Markdown table listing milestone, date, owner, acceptance criteria.
-* Placeholder bullet for gating conditions and exit criteria per milestone.
-* Placeholder bullet for dependency tracking across tasks.
+| Sprint | E1 | E2 | E3 | E4 |
+|--------|----|----|----|----|
+| **1** (07 Jul – 20 Jul) | VPC, subnets, NAT, endpoints | Launch Template, stub AMI | EFS-Dev create, KMS | Repo scaffold, CI lint |
+| **2** (21 Jul – 03 Aug) | NLB + SG harden, **S3 raw/curated buckets** | ASG-Dev & smoke | FreeIPA master + replica | Secrets rotation, **env-tagged secrets structure**, CW dashboards |
+| **3** (04 Aug – 17 Aug) | Stage IaC clone, firewall rules | **Autoscale & NLB fail-over validation**, compute tuning | Backup plan, DR docs, **EFS throughput test**, **synthetic workload generator** | tfsec/cfn-nag, cost anomaly alerts |
+| **4** (18 Aug – 01 Sep) | Prod blue/green cut-over, **change-freeze comms** | FreeIPA hardening & audit | EFS snapshot verify, **rollback simulation drill** | KT workshops, runbooks |
+
+---
+
+</details>
+
+---
+
+### sprint_backlog
+<details>
+<summary>Major deliverables by week</summary>
+
+---
+
+#### **Sprint 1 (Weeks 1-2)**
+- VPC & networking IaC live (Dev)
+- EFS-Dev provisioned, KMS encryption verified
+- CI pipeline & linting in place
+
+#### **Sprint 2 (Weeks 3-4)**
+- NLB listeners & hardened SGs deployed
+- ASG-Dev smoke test passes
+- Raw & curated **S3 buckets** with lifecycle + SSE-KMS
+- Secrets Manager rotation & **env separation** established
+
+#### **Sprint 3 (Weeks 5-6)**
+- Stage environment cloned via IaC
+- **Autoscale scale-out/in & NLB cross-AZ fail-over** tested
+- **Synthetic workload** runs against Stage; **EFS I/O stress test** logged
+- DR docs, tfsec/cfn-nag scans, cost alerts green
+
+#### **Sprint 4 (Weeks 7-8)**
+- Production blue/green deployment & smoke
+- **Rollback simulation** completed; change-freeze window enforced
+- Knowledge-transfer workshops and runbooks signed off
+- Formal hand-over & closure
+
+---
+
+</details>
+
+---
+
+### Roadmap
+```mermaid
+gantt
+    title AWS Data Platform Roadmap (2025)
+    dateFormat  YYYY-MM-DD
+    axisFormat  %b %d
+    section Sprint 1
+    Networking & Repo                :s1, 2025-07-07, 14d
+    section Sprint 2
+    NLB, ASG, S3 & Secrets           :s2, 2025-07-21, 14d
+    S3 Buckets Ready (Gate #1)       :milestone, 2025-07-30, 0d
+    section Sprint 3
+    Stage Perf & Validation          :s3, 2025-08-04, 14d
+    Autoscale & Fail-over OK (Gate#2):milestone, 2025-08-11, 0d
+    EFS I/O Test Pass                :milestone, 2025-08-13, 0d
+    section Sprint 4
+    Prod Cut-over & KT               :s4, 2025-08-18, 14d
+    Rollback Drill (Gate #3)         :milestone, 2025-08-22, 0d
+    Final Handover Sign-off          :milestone, 2025-08-29, 0d
+```
+
+### milestones
+
+<details>
+<summary>Milestone checklist</summary>
+
+---
+
+| Date (2025) | Milestone                                        |
+| ----------- | ------------------------------------------------ |
+| **Jul 18**  | Dev VPC & CI pipeline green                      |
+| **Jul 30**  | **S3 buckets provisioned & secured**             |
+| **Aug 01**  | Dev end-to-end smoke test complete               |
+| **Aug 11**  | **Autoscale & NLB fail-over validation passed**  |
+| **Aug 13**  | **EFS throughput stress test passed**            |
+| **Aug 14**  | DR fail-over drill successful                    |
+| **Aug 22**  | **Rollback simulation & change-freeze approved** |
+| **Aug 25**  | Cost-optimisation checkpoint                     |
+| **Aug 29**  | Production go-live & hand-over accepted          |
+
+---
+
+</details>
+
+---
+
+### blocker\_strategy
+
+---
+
+#### mitigation
+
+<details>
+<summary>Top risks & mitigations</summary>
+
+---
+
+| Blocker            | Mitigation                                                  |
+| ------------------ | ----------------------------------------------------------- |
+| AWS quotas         | Raise limits Sprint 1 Week 1; nightly CI quota checks       |
+| Security approvals | Evidence staged continuously; Gate #1 & Gate #2 checkpoints |
+| DR readiness       | DR docs Sprint 3; fail-over drill milestone                 |
+| Cost overrun       | Cost alerts Sprint 3; optimisation review                   |
+| Rollback readiness | Simulation in Sprint 4 before cut-over                      |
+| Skill gaps         | Pair-programming; daily 30 m tech huddle                    |
+
+---
+
+</details>
+
+---
+
+### buffer\_pto
+
+---
+
+<details>
+<summary>Incident & PTO handling</summary>
+
+---
+
+* 20 % sprint buffer covers incidents, re-work, PTO
+* Each engineer may take up to **4 PTO days** across project; prior notice needed
+* Unused buffer converts to tech-debt resolution
 
 ---
 
