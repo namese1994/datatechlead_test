@@ -1527,33 +1527,26 @@ gantt
 
 ---
 
-## Leadership & Team Coordination
+## Technical stakeholder communication
 
 ---
 
-### Team Structure & Roles
+### Audience Groups
 
 <details>
-<summary>Guidance for coordinating a 3‑4 engineer implementation team</summary>
+<summary>Key stakeholder audiences and their information needs</summary>
 
 ---
 
-* Bullet placeholders for role matrix: Tech Lead, DevOps Engineer, Security Engineer, QA.
-* Placeholder for daily stand‑up agenda and sprint cadence.
-
----
-
-</details>
-
-### Upskilling & Mentorship
-
-<details>
-<summary>Plan for developing engineer capabilities during project</summary>
-
----
-
-* Bullet placeholders for pair programming sessions, lunch‑and‑learns.
-* Placeholder for certification goals (AWS Solutions Architect – Associate).
+- **Audience summary table**  
+  | Audience | Typical Roles | Key Focus Areas | Information They Need from Infra Updates |
+  |----------|---------------|-----------------|------------------------------------------|
+  | **Executive Leadership** | CEO, CIO, CTO | Strategic alignment, risk exposure, ROI | • Confidence that the platform supports business OKRs <br>• High-impact risks & mitigation plans <br>• Budget adherence vs. forecast <br>• Launch-date confidence levels |
+  | **Product & Analytics Owners** | Heads of Data Products, Analytics Managers | Delivery dates, feature readiness | • Milestone completion vs. roadmap <br>• Any blockers that could delay analytics/ML use-cases <br>• Environment availability for testing |
+  | **Finance & Procurement** | CFO, Finance Controllers | Cost control, CapEx/OpEx split | • Actual vs. budgeted cloud spend <br>• Forecasted run-rate after go-live <br>• Savings realised from optimisation tasks |
+  | **Security & Compliance Stakeholders** | CISO, Audit, Risk Managers | Regulatory compliance, security posture | • Status of encryption, IAM, audit logging <br>• Pen-test / DR drill outcomes <br>• Open compliance actions & due dates |
+  | **Operations Leadership** | Head of SRE, IT Ops Manager | Operability, support readiness | • Monitoring/alerting coverage <br>• Run-book & hand-over progress <br>• Mean-time-to-recover targets vs. test results |
+  | **Customer-Facing Account Teams (Optional)** | Customer Success, Sales Engineering | External commitments, client confidence | • High-level timelines they can share with clients <br>• Any service-level guarantees or changes |
 
 ---
 
@@ -1561,33 +1554,22 @@ gantt
 
 ---
 
-## Stakeholder Communication
-
----
-
-### Business Alignment
-
+### Communication Artefacts
 <details>
-<summary>Tech‑to‑business translation and executive updates</summary>
+<summary>Core mechanisms used to communicate infrastructure status and progress</summary>
 
 ---
 
-* Bullet placeholders for KPI dashboard summary, cost visibility.
-* Placeholder for monthly executive readout slide deck.
-
----
-
-</details>
-
-### Progress Reporting
-
-<details>
-<summary>Regular update mechanisms and communication cadence</summary>
-
----
-
-* Bullet placeholders for weekly status email template.
-* Placeholder for Jira/Roadmap snapshot links.
+- **Communication artefact table**  
+  | Mechanism / Artefact | Primary Audience(s) | Delivery Channel & Frequency | Typical Contents | Why It Works |
+  |----------------------|---------------------|------------------------------|------------------|--------------|
+  | **Live KPI Dashboard** | Execs, Ops, Product | Web link (Grafana, Power BI) • `24 × 7` access | - Platform readiness `%`<br>- Uptime & latency SLIs<br>- Cost burn-down vs. budget<br>- Risk heat-map widgets | Puts always-current metrics one click away, reducing ad-hoc status pings. |
+  | **Milestone Checklist (Gantt snapshot)** | Product, Execs | Posted in Confluence & sprint demo decks • Updated twice weekly | Colour-coded bars for each work-stream, milestone flags, `%` complete | Visual timeline instantly shows “on track / at risk” without deep tech. |
+  | **Weekly Status Email** | Execs, Finance, Security | Plain-text + table • Friday COB | 🚦 `RAG` summary<br>• Completed this week<br>• Planned next week<br>• Top `3` risks/blockers<br>• Spend to date | Low-friction, searchable, can be forwarded by busy VPs. |
+  | **Sprint Review Demo (`15 min` video / live)** | Product, Ops, Security | Recorded Teams meeting • end of each sprint | Live walk-through of new infra components, monitoring views, automation scripts | Concrete proof of progress; captures `Q&A` for backlog. |
+  | **Monthly Executive Slide Deck** | C-Suite, Board liaison | `PDF` via email & `15 min` verbal readout | • Milestone variance chart<br>• ROI and cost forecast delta<br>• High/critical risks & mitigations<br>• Next-month decisions needed | Executive-level synthesis; keeps infra visible at the strategy table. |
+  | **Risk & Decision Log** | Execs, Security, Finance | Shared sheet • real-time | • Date raised / owner / impact<br>• Decision deadline & outcome | Transparent audit trail; links each risk to a mitigation cost. |
+  | **Cost Optimisation Tracker** | Finance, Ops | Live spreadsheet + monthly summary | • AWS service-level spend<br>• Savings plans & `RI` coverage<br>• Open optimisation tickets | Aligns engineering tweaks with finance goals; shows realised `$` savings. |
 
 ---
 
@@ -1595,143 +1577,226 @@ gantt
 
 ---
 
-## Risk Management & Mitigation
+
+### Communication Best Practices
+<details>
+<summary>Guidelines for expressing infrastructure progress in business-relevant terms</summary>
+
+---
+#### Link to Business Objectives
+- Start every update with how the infrastructure milestone advances a specific business OKR (`revenue growth`, `customer retention`, `regulatory compliance`)
+- Replace service names with the capability they unlock: *“Multi-AZ FreeIPA enables <99.9%> user-auth availability for analytics teams”*
+- Highlight time-to-market benefits: *“New AMI pipeline shaved <2 days> from data-model release cycle”*
+
+---
+#### Quantify Financial Impact
+- Frame costs and savings in familiar finance language: *CapEx avoidance*, *run-rate delta*, *payback period*
+- Convert technical optimisations into dollar figures: *“S3 lifecycle tiering saves `$12K` annually at current data growth”*
+- Use variance charts (actual vs. budget) rather than raw CloudWatch metrics to keep focus on spend discipline
+
+---
+#### Surface Risk & Mitigation Clearly
+- Present top risks in a heat-map or simple 🚦`RAG` status, paired with owner and mitigation ETA
+- Translate failure modes into business consequences: *“If EFS throughput not achieved, nightly billing run slips by <4 hrs>, delaying invoices”*
+- Keep mitigations action-oriented and cost-scoped so executives can weigh trade-offs quickly
+
+---
+#### Keep Language Plain & Jargon-Free
+- Swap acronyms for plain terms on first mention (*Network Load Balancer → traffic balancer*)
+- Limit deep-dive technical data to appendix links; main body should stay at “what / why / impact” level
+- Use analogies sparingly but effectively: *“Think of FreeIPA as the office badge system—if it’s down, no one gets in”*
+
+---
+#### Focus on Forward Actions
+- Conclude each update with **next two actions**, owner, and due date so leaders know decisions required
+- Tie blockers to decision gates: *“Awaiting security sign-off—risks pushing go-live by `<5 days>` if not cleared by `<Aug 14>`”*
+- Provide escalation path and threshold (e.g., cost over-run >`10%` or schedule slip >`1 week` triggers immediate exec briefing)
+
+---
+</details>
 
 ---
 
-### Risk Register
+
+### Cadence & Escalation Rules
+<details>
+<summary>Structured timetable for stakeholder communications</summary>
+
+---
+#### Weekly & Sprint Rhythm
+- **Weekly status email** sent every Friday COB ‒ includes 🚦 `RAG` summary, last/next tasks, top `3` risks, and cloud spend-to-date
+- **Sprint review demo** recorded at the close of each `<2-week>` sprint ‒ live walk-through plus Q&A; link shared within `24 h`
+- **Standing KPI dashboard check-in** during Monday stand-up ‒ project lead calls out any metric outside threshold
+
+---
+#### Monthly & Milestone Reviews
+- **Monthly executive readout** on first Monday ‒ `<15 min>` deck + verbal sync covering milestone variance, ROI delta, critical risks
+- **Finance cost report** on final working day ‒ spreadsheet of actual vs. budget, Savings Plan/RI coverage, upcoming optimisation actions
+- **Milestone gate review** scheduled within `48 h` of milestone readiness ‒ sign-off meeting with Exec sponsor & Product owner
+
+---
+#### Trigger-Based Escalations
+- **Risk severity ≥ “Red”** or schedule slip `>1 week` ‒ immediate Slack & email to Exec sponsor; 30-minute huddle within same business day
+- **Cost variance `>10 %`** vs. plan ‒ escalated to Finance & CTO; require mitigation plan within `3` working days
+- **Security/compliance events** (pen-test fail, DR drill issue) ‒ summary to CISO and Execs within `24 h`; remediation tracker opened
+- **Change-freeze window** (starts `1 week` pre-go-live) ‒ broadcast via company-wide email and calendar reminder; any urgent change requires CTO approval
+
+---
+</details>
+
+---
+
+## Technical risk management
+
+---
 
 <details>
-<summary>Identification, impact analysis, and mitigation actions</summary>
+<summary>Infrastructure risk overview and mitigation strategies</summary>
 
 ---
 
-* Bullet placeholders for security risks, cost overrun, skills gap.
-* Placeholder for residual risk acceptance criteria.
+* **FreeIPA directory outage halts authentication**
+
+  * Deploy master and replica in separate AZs with `ipa-replica-manage` health probes.
+  * ASG lifecycle hook auto-rebuilds replica in `<15 min>`.
+  * Hardened AMI contains break-glass local users for emergency access.
+
+* **EFS backup or restore failure causes data loss**
+
+  * AWS Backup daily snapshots + weekly cross-Region copy.
+  * Monthly automated restore drill with checksum validation; alerts if mismatch > `0.1 %`.
+
+* **EFS throughput or IOPS saturation delays nightly pipelines**
+
+  * CloudWatch alarm on `PercentIOLimit > 80 %` for `15 min`.
+  * IaC switch to elastic throughput or FSx for Lustre when threshold breached.
+
+* **Security breach via overly permissive SG or IAM policy**
+
+  * Terraform-only SG definitions; AWS Config conformance packs block `0.0.0.0/0` ingress.
+  * Nightly `tfsec`/`checkov` scans and IAM Access Analyzer auto-remediation.
+
+* **Run-away cost from mis-configured Auto Scaling or NAT egress**
+
+  * ASG `max_capacity` hard-limit `10` instances; NAT byte alarm at `80 %` baseline.
+  * AWS Cost Anomaly Detection + weekly Finance report drives optimisation.
+
+* **AWS quota exhaustion blocks scale-out or new environment deployment**
+
+  * Sprint-1 quota uplift requests.
+  * CI step queries `ServiceQuotas` API and fails if utilisation > `85 %`.
+
+* **Terraform/Ansible drift introduces unknown state**
+
+  * Nightly Terraform plan (dry-run) + weekly Ansible `check_mode`.
+  * Drift resources auto-tagged `drift=true`; minor drift remediated via SSM Automation.
+
+* **Unpatched OS or runtime CVE exposure**
+
+  * Weekly SSM Patch Manager windows per environment with pre-patch snapshot.
+  * Critical CVE triggers `AWS-PatchEmergency`; compliance KPI `<95 %` posts alert to `#ops-patching`.
+
+* **Secrets exposure or stale credentials**
+
+  * Secrets Manager `30-day` rotation with Lambda rotators; rotation failure alerts via EventBridge.
+  * IAM access keys disabled; SSO-only access enforced.
+
+* **Cross-AZ network failure impacts NLB routing**
+
+  * Multi-AZ NLB listeners with health checks; ASG balanced across AZs.
+  * Quarterly chaos test suspends an AZ to verify fail-over ≤ `<1 min>`.
 
 ---
 
 </details>
 
-### Contingency Strategies
+---
 
-<details>
-<summary>Fallback procedures for critical failure scenarios</summary>
+## Team technical development
 
 ---
 
-* Bullet placeholders for manual failover steps.
-* Placeholder for alternative provider strategy.
+### Required skills, tools, and knowledge areas
+
+<details>
+<summary>Capabilities DevOps engineers must develop</summary>
+
+---
+
+* **AWS networking foundations** – `VPC`, CIDR design, subnetting, `NAT`, `IGW`, `VPC Endpoints`, `Network Load Balancer`, `Security Groups`, `NACL`.
+* **Compute & scaling services** – `EC2` lifecycle, `Launch Template`, `Auto Scaling Group` policies, spot/mixed-instance strategy.
+* **Storage services** – `Amazon EFS` performance modes, mount targets, `S3` lifecycle & encryption, `EBS` snapshot management.
+* **Identity & access management** – `IAM` roles/policies/SCP, `AWS Identity Center` SSO, customer-managed `KMS`, `FreeIPA` LDAP/Kerberos administration.
+* **Infrastructure as Code (IaC)** – Terraform `HCL`, module design, remote state, drift detection, linting with `tflint`, `tfsec`, `checkov`.
+* **Configuration management** – Ansible roles/playbooks, dynamic inventory from Terraform, idempotency principles, `ansible-vault` secrets handling.
+* **CI/CD tooling** – `GitHub Actions`, `CodeBuild`, `CodePipeline`, automated plan/apply gates, secret scanning.
+* **Containerization** – `Docker`/`Podman`, image hardening, compose manifests, registry workflows in `ECR`.
+* **Data-pipeline runtimes** – `Apache Spark`, `dbt`, `Apache Airflow` deployment patterns, resource tuning, log collection.
+* **Monitoring & observability** – `CloudWatch` metrics/logs/alarms, `CloudWatch Agent`, OpenTelemetry custom metrics, dashboards, PagerDuty integration.
+* **Security operations** – `AWS Config` conformance packs, `GuardDuty`, `Security Hub`, vulnerability management, Secrets Manager rotation.
+* **Backup & disaster recovery** – `AWS Backup` vault policies, cross-Region copy, restore validation, RTO/RPO calculation.
+* **Cost governance** – `AWS Cost Explorer`, budgets, `Cost Anomaly Detection`, Savings Plans/RI strategy.
+* **Patch & compliance automation** – `SSM Patch Manager`, maintenance windows, compliance reporting.
+* **Scripting & automation** – Python/Bash for tooling wrappers, `SSM Automation` documents, Lambda housekeeping functions.
+* **Testing & validation** – `Terratest`, Molecule, load/chaos testing, synthetic alarms.
+* **Documentation & knowledge sharing** – Markdown runbooks, Confluence pages, diagramming with `Mermaid`, audit evidence capture.
 
 ---
 
 </details>
 
----
-
-## Training & Knowledge Transfer
-
----
-
-### Documentation Handoff
+### Upskilling methods and activities
 
 <details>
-<summary>Process for transferring system knowledge to support teams</summary>
+<summary>Recommended interventions for capability building</summary>
 
 ---
 
-* Bullet placeholders for runbook repository, FAQ wiki pages.
-* Placeholder for recorded walkthrough sessions.
+| Method                                   | Purpose & Scope                                                                                                                  | Cadence / Duration                        | Ownership & Resources                                                             |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------- |
+| **Structured pair-programming**          | Share Terraform & Ansible patterns; enforce coding standards; real-time knowledge transfer between senior and junior engineers.  | 2 × 2-hour sessions per sprint            | Lead DevOps pairs with rotating mentee; screen-share, joint PR.                   |
+| **Hands-on AWS workshops (“lab days”)**  | Guided labs on VPC design, EFS tuning, IAM boundary policies, CloudWatch dashboards. Uses AWS Skill Builder or sandbox accounts. | Monthly ½-day; follow-up quiz             | Tech Lead curates lab scripts; training budget covers workshop credits.           |
+| **Code & pipeline reviews**              | Enforce IaC quality (tflint, tfsec, checkov); surface best practices; discuss DR patterns, tagging standards.                    | Every pull-request; 24 h SLA              | All DevOps engineers; review checklist lives in repo `/docs/review.md`.           |
+| **Lightning talks / brown-bag sessions** | 15-min demos on niche topics (SSM Automation tips, GuardDuty tuning); encourages peer teaching.                                  | Weekly after stand-up                     | Volunteer presenter; recordings stored in Confluence.                             |
+| **Certification tracks**                 | AWS Solutions Architect-Associate, AWS DevOps Professional, HashiCorp Terraform Associate. Builds recognised baseline skills.    | Target ± 1 cert per engineer per 6 months | Individual study plan; exam vouchers in L\&D budget.                              |
+| **Documentation sprints**                | Convert tribal knowledge into run-books, diagrams, and ADRs; sanity-check procedures during writing.                             | End of each sprint (½-day)                | Tech Writer + DevOps pair; PR merged to `/docs/runbooks/`.                        |
+| **Mentor–mentee rotation**               | Formal 4-week cycles focusing on one skill gap (e.g., FreeIPA ops); ends with mentee delivering a demo.                          | Rolling; tracked by Skills Matrix         | Tech Lead assigns pairs; progress logged in Confluence page “Mentorship Tracker”. |
+| **Chaos game days**                      | Simulate AZ outage, IAM mis-config, EFS throttle to practise incident response and DR procedures.                                | Quarterly                                 | SRE coach orchestrates; post-mortem captures lessons.                             |
+| **Hackathons (“automation week”)**       | Tackle backlog of automation ideas—e.g., NAT cost analyser, drift auto-fix Lambda. Encourages innovation & cross-team bonding.   | Twice per year; 3 days                    | PM secures timebox; winning project added to roadmap.                             |
+| **Community of practice (CoP)**          | Shared Slack channel + fortnightly meeting with data engineers & SREs; discuss patterns, tooling, RFCs.                          | Bi-weekly                                 | Rotating facilitator; agenda crowd-sourced.                                       |
 
 ---
 
 </details>
 
-### Ongoing Education
+### Tracking progress & ensuring knowledge transfer
 
 <details>
-<summary>Post‑deployment learning path for engineers</summary>
+<summary>Metrics, artefacts, and governance for continuous capability growth</summary>
 
 ---
 
-* Bullet placeholders for future AWS service deep dives.
-* Placeholder for cross‑training with data analytics team.
+| Tracking Mechanism              | What it Measures                                                         | Update Frequency                                    | Visibility                                                                      | Action on Gaps                                                            |
+| ------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **Skills matrix (Confluence)**  | Proficiency (0-3) across the 18 capability areas; certification status.  | Sprint-end                                          | Team page; snapshot surfaced in sprint review deck.                             | Tech Lead assigns mentor or workshop where score < 2 for critical skills. |
+| **Mentorship tracker**          | Active mentor-mentee pairs, goal statement, progress notes, demo status. | Weekly                                              | Confluence “Mentorship Tracker”.                                                | Escalate to Tech Lead if goal demo not delivered by week 4.               |
+| **Certification scoreboard**    | Exam attempts, passes, upcoming bookings.                                | Monthly                                             | Dashboard widget in KPI Grafana.                                                | PM flags funding/code-freeze if cert uptake < 75 % of plan.               |
+| **Pull-request quality report** | Lint/security pass rate, review SLA adherence, rework count.             | Automated daily GitHub Action → Slack `#devops-ci`. | PR author addresses repeat findings; pair-programming scheduled if > 3 repeats. |                                                                           |
+| **Workshop attendance log**     | RSVP vs. attendance, post-quiz scores.                                   | After each lab day                                  | Confluence table; summary in weekly status email.                               | Non-attendee must complete recording + quiz inside 1 week.                |
+| **Lightning-talk archive**      | Indexed recordings & slide decks with tags (e.g., “SSM”, “GuardDuty”).   | Continuous                                          | Confluence—searchable by tag.                                                   | Quarterly audit deletes/outdates ≥ 12 m old; request refresh.             |
+| **Run-book coverage KPI**       | % of critical procedures with up-to-date run-book (< 90 days old).       | Monthly                                             | Platform-Health dashboard.                                                      | Documentation sprint backlog item created when KPI < 95 %.                |
+| **Chaos day post-mortems**      | Lessons learned, follow-up JIRA actions, knowledge gaps surfaced.        | Within 48 h of event                                | Confluence page linked to incident.                                             | Action items tracked to closure in sprint backlog.                        |
+
+---
+
+#### Governance workflow
+
+1. **Sprint review** – Tech Lead presents skills-matrix diff and PR quality trends.
+2. **Monthly L\&D sync** – PM + Tech Lead validate certification pipeline and budget burn.
+3. **Quarterly capability review** (aligns with chaos game day retrospective) – update role expectations, refresh skills matrix rubric, adjust training backlog.
+4. **Exit criteria for project hand-over** – ≥ 95 % run-book coverage, all engineers ≥ 2 proficiency in core domains (IaC, AWS networking, observability), at least one engineer holding AWS DevOps Pro cert.
 
 ---
 
 </details>
 
----
-
-## Terminology & Standards
-
----
-
-### Glossary
-
-<details>
-<summary>Canonical definitions for technical terms used in this document</summary>
-
----
-
-* `EC2`: <em>Elastic Compute Cloud</em> – Placeholder definition.
-* `EFS`: <em>Elastic File System</em> – Placeholder definition.
-* Add more acronym bullets as needed.
-
----
-
-</details>
-
-### Documentation Style Compliance
-
-<details>
-<summary>Reminder of mandatory ctx_doc_style rules</summary>
-
----
-
-* All content must remain bullet‑only, no numbered lists.
-* All block elements two‑space indented.
-* No `---` separators between ### sections.
-
----
-
-</details>
-
----
-
-## Quality Checklist (Pre‑Submission)
-
----
-
-### Structure Review
-
-<details>
-<summary>Template checkboxes for structural compliance</summary>
-
----
-
-* [ ] YAML front matter present with snake\_case title.
-* [ ] Every ### subsection contains exactly one details block.
-* [ ] Main ## sections separated by `---`.
-* [ ] Details blocks start and end with `---` separators.
-* [ ] Subsubsections separated by `---` inside details blocks.
-
----
-
-</details>
-
-### Content Review
-
-<details>
-<summary>Template checkboxes for content completeness</summary>
-
----
-
-* [ ] All required technical deliverables addressed.
-* [ ] Leadership coordination narrative included.
-* [ ] Diagrams and code snippets inserted where marked `TODO`.
-* [ ] Terminology section updated with project‑specific terms.
-
----
-
-</details>

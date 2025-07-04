@@ -1,8 +1,4 @@
-## Prompt Catalog
-
----
-
-### Technical Architecture
+## Technical Architecture
 
 <details>
 <summary>Generate comprehensive AWS Data Platform architecture content</summary>
@@ -140,7 +136,7 @@
 
 </details>
 
-### Deployment chronology
+## Deployment chronology
 <details>
 <summary>Determine project deployment chronology</summary>
 
@@ -176,7 +172,7 @@
 
 ---
 
-### Automation & IaC
+## Automation & IaC
 
 <details>
 <summary>Produce Infrastructure as Code and configuration management snippets</summary>
@@ -229,7 +225,7 @@
 
 </details>
 
-### Access Control & Security
+## Access Control & Security
 
 <details>
 <summary>Design IAM, authentication flow, and security hardening content</summary>
@@ -270,7 +266,7 @@
 
 </details>
 
-### System integration documentation
+## System integration documentation
 <details>
 <summary>Design System integration documentation</summary>
 
@@ -324,7 +320,7 @@
 
 ---
 
-### Operational Procedures
+## Operational Procedures
 
 <details>
 <summary>Design Operational Procedures</summary>
@@ -380,7 +376,7 @@
   ```
 ---
 
-### Team implementation guidance and Project timeline management 
+## Team implementation guidance and Project timeline management 
 
 <details>
 <summary>Create detailed Project timeline management  and resource allocation</summary>
@@ -465,6 +461,155 @@
   * Compliance: SOC2, GDPR, industry regulations
 
   ```
+
+---
+
+</details>
+
+##  Technical stakeholder communication
+
+<details>
+<summary> Explain infrastructure progress to business leaders</summary>
+
+---
+```
+# Role
+
+You are a Data Technical Lead with 10 years of experience.
+
+# Input
+
+I will provide context on the system architecture, project scope, and any relevant progress tracking mechanisms:
+"""
+< Paste all designed document here>
+"""
+
+# Goal
+
+Produce the "Technical stakeholder communication" documentation section, describing methods and best practices for communicating infrastructure progress and status to business leaders and non-technical stakeholders.
+
+---
+
+# Task
+
+For each step, generate the corresponding documentation content about how to report infrastructure progress, status, and risks to business and executive stakeholders.
+
+# Instructions
+
+Follow these steps.  
+After each step, wait for my confirmation or edits before continuing.
+
+Step 1:  
+Describe the main audiences for infrastructure progress communications (e.g., executives, product owners, finance, etc.) and their information needs.
+
+Step 2:  
+Describe the core reporting mechanisms and formats used for communicating infrastructure status/progress (e.g., KPI dashboards, milestone checklists, email updates, executive slide decks, roadmap snapshots).
+
+Step 3:  
+Describe best practices for translating technical infrastructure updates into business-relevant language and metrics (e.g., impact on project goals, cost visibility, risk mitigation, time-to-market).
+
+Step 4:  
+Describe the regular cadence and triggers for stakeholder communication (e.g., weekly status email, milestone reviews, ad hoc escalations, monthly executive readouts).
+
+Remember: Use markdown and follow the documentation style guidelines from ctx_doc_style.md.
+
+```
+
+</details>
+
+## Technical risk management
+
+<details>
+<summary>Generate infrastructure risk table and mitigation strategies</summary>
+
+---
+
+```
+
+# Role
+
+You are a Data Technical Lead with 10 years of experience in delivering and operating enterprise data platforms on AWS. Your expertise includes technical risk management and mitigation planning for large-scale infrastructure.
+
+# Input
+
+I will provide context on the system architecture and any known risk areas:
+"""
+<Paste architecture, project context, and risk-relevant details as needed>
+"""
+
+# Goal
+
+Generate the "Technical risk management" section under a level 2 header, summarizing key infrastructure risks and their mitigation strategies for the project documentation.
+
+---
+
+# Task
+
+Use the following two steps.  
+Only write the output for Step 2.
+
+Step 1:  
+Identify and internally sort all infrastructure risks relevant to the provided architecture, ordered by decreasing impact (this is your internal thinking layer; do not output this list).
+
+Step 2:  
+Output a markdown table under a level 2 header (`## Technical risk management`).  
+Each row should list one infrastructure risk and its corresponding mitigation strategy.  
+Use clear, concise, technical language suitable for system documentation.  
+Use markdown and follow the documentation style from ctx_doc_style.md.
+```
+
+---
+
+</details>
+
+---
+
+## Team technical development
+
+---
+
+<details>
+<summary>Upskill DevOps engineers during platform implementation</summary>
+
+---
+
+```
+# Role
+
+You are a Data Technical Lead with 10 years of experience mentoring DevOps engineers on AWS Data Platform projects.
+
+# Input
+
+I will provide context on the platform architecture, team structure, and any upskilling goals or constraints:
+"""
+<Paste platform architecture, team allocation>
+"""
+
+And here is skill matrix and upskilling objectives:
+<input engineers skill matrix, or upskilling objectives here>
+
+# Goal
+
+Produce the "Team technical development" documentation section, describing how to upskill DevOps engineers during platform implementation.
+
+---
+
+# Task
+
+Follow these steps.  
+After each step, wait for my confirmation or edits before moving to the next step.
+
+Step 1:  
+Identify all relevant technical skills, tools, and knowledge areas DevOps engineers need for the successful implementation and ongoing operation of the platform.
+
+Step 2:  
+Document best-practice methods and activities for upskilling and capability building, such as pair programming, technical workshops, code reviews, certifications, hands-on labs, or documentation sprints.
+
+Step 3:  
+Summarize recommendations for tracking skill progress and ensuring knowledge transfer within the team.
+
+Remember: Use markdown and follow the documentation style guidelines from ctx_doc_style.md.
+```
 
 ---
 
