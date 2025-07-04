@@ -1055,30 +1055,112 @@ gantt
 
 ---
 
-### IAM & Authentication Flow
+## System Integration
 
 <details>
-<summary>End‑to‑end access control architecture</summary>
+<summary>System integration: connectivity, data flows, and network architecture</summary>
 
 ---
 
-* Bullet placeholders for SSO integration, identity federation, user onboarding.
-* Diagram placeholder for trust relationships and auth sequence.
-* Placeholder for secrets management via AWS Secrets Manager / SSM Parameter Store.
+### Core system components
+
+* **Compute nodes** – `EC2 Auto Scaling Workers`, `FreeIPA Master`, `FreeIPA Replica`, `CodeBuild / CodePipeline` containers
+* **Networking** – `Network Load Balancers`, `Internet Gateway`, `NAT Gateways`, `VPC Interface Endpoints (SSM, Secrets Manager)`, `VPC Gateway Endpoint (S3)`, `Route 53` private zone
+* **Storage** – `Amazon EFS` (multi-AZ), `Amazon S3` buckets (raw, staged, curated, logs), `Amazon ECR` repositories, `EBS` volumes
+* **Security & ops** – `AWS Secrets Manager`, `AWS Systems Manager`, `AWS CloudWatch`, `AWS Backup`, `GuardDuty`, `AWS Config`, `CloudTrail`
+* **Application runtimes** – `Spark`, `Airflow`, `dbt`, `custom ETL` containers
+* **External actors** – business users / data scientists (HTTPS), DevOps & engineers (SSM Session Manager)
 
 ---
 
-</details>
+### Components Connectivity relationships
 
-### Network Security
-
-<details>
-<summary>Defense‑in‑depth approach and traffic segmentation</summary>
+* **Users → NLB**: `HTTPS/443`
+* **Engineers → SSM VPCE**: `TLS` (SSM StartSession)
+* **NLB → Workers**: `HTTPS/443`, `SSH/22`
+* **NLB → FreeIPA Master**: `LDAP/389`, `LDAPS/636`
+* **Workers ↔ FreeIPA**: `LDAP/389`, `Kerberos/88`, `LDAPS/636`
+* **FreeIPA Master ↔ Replica**: `LDAP/389` (replication)
+* **Workers → EFS**: `NFS/2049`
+* **Workers → S3 (GW VPCE)**: `HTTPS/443`
+* **Workers / FreeIPA → Secrets Manager VPCE**: `HTTPS/443`
+* **Workers → SSM VPCE**: `HTTPS/443`
+* **Workers → NAT Gateway → Internet**: `HTTPS/443`
+* **CloudWatch Agent → CloudWatch**: `HTTPS/443`
+* **CodeBuild → ECR / TF-state S3**: `HTTPS/443`
 
 ---
 
-* Bullet placeholders for security groups, NACLs, flow logs review.
-* Placeholder for encryption in transit (TLS) and at rest (KMS keys).
+### End-to-end data flows
+
+* **Ingestion**: external uploads or API pulls → `S3 raw`
+* **Processing**: Airflow triggers Spark → read `S3 raw`, stage on `EFS`, write `S3 staged` → dbt → `S3 curated`
+* **Secrets & auth**: Kerberos tickets from FreeIPA; secrets via Secrets Manager VPCE
+* **Archival**: EFS snapshots via AWS Backup; S3 lifecycle to Glacier
+* **Consumption**: Athena/EMR on `S3 curated` → results via NLB
+* **Observability**: CloudWatch metrics/logs, SNS alarms to PagerDuty
+
+---
+
+### Network segmentation & security zones
+
+* **Public subnets** – NLB, NAT; inbound limited to 443/22/389
+* **Private-App subnets** – workers, FreeIPA; east-west limited to LDAP/Kerberos/NFS; outbound via NAT
+* **Private-Data subnets** – EFS mount targets; ingress `NFS/2049` only
+* **Endpoints subnet** – VPCEs (SSM, Secrets Manager) + S3 Gateway; no direct Internet route
+* **Controls** – default-deny SGs, VPC Flow Logs, admin only through SSM
+
+---
+
+### Network & data-flow diagram
+
+```mermaid
+graph TD
+    Users[👥 Users]
+    Engineers[🔧 Engineers]
+    NLB[NLB public]
+    SSMVPCE[SSM VPC Endpoint]
+    NAT[NAT Gateway]
+    Internet[🌐 Internet]
+    CloudWatchAgent[📈 CW Agent]
+    CloudWatch[CloudWatch]
+    CodeBuild[🛠️ CodeBuild]
+    ECR[ECR]
+    TFState[S3 TF State Bucket]
+
+    subgraph "Private-App Subnets"
+        Workers[🏗️ Worker ASG]
+        FreeIPA1[🔐 FreeIPA Master]
+        FreeIPA2[🔐 FreeIPA Replica]
+    end
+
+    subgraph "Private-Data Subnets"
+        EFS[💾 EFS Mount Targets]
+    end
+
+    subgraph "Endpoints Subnet"
+        Secrets[🔑 Secrets Mgr VPCE]
+        S3GW[S3 Gateway Endpoint]
+    end
+
+    Users -->|443| NLB
+    Engineers -->|TLS| SSMVPCE
+    Users -->|443/22| NLB
+    NLB -->|443/22| Workers
+    NLB -->|389/636| FreeIPA1
+    Workers -->|389/88/636| FreeIPA1
+    FreeIPA1 -.->|replication 389| FreeIPA2
+    Workers -->|2049| EFS
+    Workers -->|443| S3GW
+    Workers -->|443| Secrets
+    Workers -->|443| SSMVPCE
+    Workers -->|443| NAT
+    NAT -->|443| Internet
+    CloudWatchAgent -->|443| CloudWatch
+    CodeBuild -->|push/pull| ECR
+    CodeBuild -->|plan/apply| TFState
+
+```
 
 ---
 
@@ -1088,32 +1170,323 @@ gantt
 
 ## Operational Procedures
 
----
+<details>
+<summary>Operational Procedures: monitoring, backup, and maintenance</summary>
 
-### Monitoring & Alerting
+### metrics\_alarms\_dashboards
 
 <details>
-<summary>System health visibility and proactive incident response</summary>
+<summary>Key metrics, alarm thresholds, and CloudWatch dashboards</summary>
 
 ---
 
-* Bullet placeholders for CloudWatch dashboards, alarm thresholds.
-* Placeholder for incident escalation runbook reference.
-* Placeholder for log retention policies.
+* **EC2 Worker Fleet**
+
+  * `CPUUtilization` > 85 % for 5 min → *Scale-up* alarm
+  * `mem_used_percent` (CW Agent) > 90 % for 5 min → *Critical* alarm
+  * `disk_used_percent` > 80 % (root & /data) → *Warning* alarm
+  * `AutoScalingGroupDesiredCapacity` vs. `InService` mismatch > 2 instances for 10 min → *Capacity Drift* alarm
+
+* **EFS**
+
+  * `BurstCreditBalance` < 5 GiB → *Throughput Risk* alarm
+  * `PercentIOLimit` > 80 % → review performance mode
+
+* **FreeIPA**
+
+  * Custom metric `ldap_bind_failures` > 50 in 5 min → *Auth Failure Spike* alarm
+  * `StatusCheckFailed_System` > 0 → *Instance Impaired*
+
+* **Networking**
+
+  * `NATGatewayBytes` > 80 % of baseline for 30 min → *Cost Spike* alert
+  * `RejectedConnectionCount` (VPC Flow Logs) trend up 3 × baseline → *SG Misconfig* warning
+
+* **Security & Compliance**
+
+  * GuardDuty finding severity ≥ 4 → *Critical Security* alarm
+  * Config rule non-compliant resources count > 0 → *Compliance Drift*
+
+* **Dashboards**
+
+  * **Platform-Health**: ASG capacity, CPU/Mem, EFS IO, NAT bytes, top GuardDuty findings
+  * **Data-Pipeline**: Spark job runtime, Airflow DAG success rate, dbt model failures, S3 throughput
 
 ---
 
 </details>
 
-### Backup & Recovery
+### logging\_flows
 
 <details>
-<summary>Data protection strategy and disaster recovery preparedness</summary>
+<summary>Log generation, destinations, and retention</summary>
 
 ---
 
-* Bullet placeholders for AWS Backup plans, point‑in‑time restores.
-* Placeholder for recovery time (RTO) and recovery point (RPO) objectives.
+* **EC2 System Logs** → `cwlogs:/ec2/system/<env>` — retention 90 days
+* **Application Logs**
+
+  * `Spark`, `Airflow`, `dbt` containers → `cwlogs:/apps/<service>/<env>` — retention 90 days
+  * Log format: JSON-structured with `level`, `ts`, `job_id` fields
+* **FreeIPA Logs** (`/var/log/dirsrv`, `/var/log/krb5kdc`) → `cwlogs:/freeipa/<env>` — retention 180 days
+* **SSM Session Logs** → `s3://org-audit-logs/ssm/` + `cwlogs:/ssm/sessions` — S3 object lock 1 year
+* **CloudTrail** org trail → `s3://org-audit-logs/cloudtrail/` — Glacier after 365 days
+* **VPC Flow Logs** all subnets → `cwlogs:/vpc/flow/<vpc_id>` — retention 30 days; Athena partition for ad-hoc queries
+* **GuardDuty & Security Hub Findings** → `cwlogs:/security/findings` + EventBridge → Slack `#sec-alerts`
+
+---
+
+</details>
+
+### alerting\_escalation
+
+<details>
+<summary>Alert routing, escalation paths, and run-books</summary>
+
+---
+
+* **Alarm Targets**
+
+  * All CloudWatch alarms → `SNS:platform-alerts`
+  * `SNS:platform-alerts` subscriptions: `PagerDuty Events V2`, `Slack Webhook`, email `on-call@company.com`
+* **Severity Tags**
+
+  * *CRITICAL* — page on-call immediately (PD severity 2)
+  * *WARNING* — Slack notification + PD low-urgency (severity 3)
+  * *INFO* — Slack only, no paging
+* **Escalation Policy**
+
+  1. On-call DevOps (15 min)
+  2. Secondary DevOps (15 min)
+  3. Tech Lead + Security Engineer (until acknowledged)
+* **Run-book Links**
+
+  * Attached to each alarm via `AWS::CloudWatch::Alarm` `AlarmActions` annotation (S3 markdown URL)
+  * Example: `s3://runbooks/platform/efs-burstcredit.md`
+* **Drill Schedule**
+
+  * PagerDuty “Failure Friday” — quarterly synthetic alarm injection, verify paging & resolution
+  * Slackbot posts summary of drill outcome in `#platform-ops`
+
+---
+
+</details>
+
+---
+
+### backup\_coverage
+
+<details>
+<summary>Resources protected & backup mechanism</summary>
+
+---
+
+* **Amazon EFS**
+
+  * Policy-based backups via `AWS Backup` (resource assignment tag `backup:tier=gold`)
+  * Daily point-in-time file-system snapshot
+* **EBS Volumes**
+
+  * FreeIPA root & data volumes, worker root volumes
+  * `AWS Backup` incremental snapshots
+* **Amazon S3**
+
+  * Buckets: `raw`, `staged`, `curated`, `logs`
+  * Versioning + MFA-Delete enabled
+  * Lifecycle transition to `Glacier Flexible Retrieval`
+* **AWS Backup Vault**
+
+  * KMS-encrypted (`alias/backup‐vault`)
+  * Cross-Region copy to `ap-northeast-1` for DR
+* **RDS/Aurora (future)**
+
+  * Placeholder module – automated daily snapshots
+* **AWS Backup Audit Manager**
+
+  * Compliance report generation, stored in `s3://org-audit-logs/backup-reports/`
+
+---
+
+</details>
+
+### retention\_schedule
+
+<details>
+<summary>Frequency & retention policies</summary>
+
+---
+
+| Resource             | Frequency | Retain  | Transition / Copy                      |
+| -------------------- | --------- | ------- | -------------------------------------- |
+| **EFS**              | Daily     | 7 days  | Weekly copy → DR region (7 copies)     |
+| **EFS**              | Weekly    | 4 weeks | Monthly copy → DR region (12 copies)   |
+| **EBS (FreeIPA)**    | Daily     | 7 days  | None                                   |
+| **EBS (Workers)**    | Daily     | 3 days  | None                                   |
+| **S3 Versions**      | Immediate | 30 days | Glacier after 30 d, delete after 365 d |
+| **AWS Backup Vault** | N/A       | 1 year  | Cross-Region vault copy                |
+
+---
+
+</details>
+
+### restore\_and\_validation
+
+<details>
+<summary>Restore drills & integrity checks</summary>
+
+---
+
+* **Monthly EFS Restore Test**
+
+  * Automated `AWS Backup` restore to *staging* VPC
+  * Run checksum diff against live dataset (`rsync --dry-run --checksum`)
+* **Quarterly FreeIPA DR Drill**
+
+  * Restore EBS snapshot to new instance in isolated subnet
+  * Verify LDAP bind and Kerberos ticket issuance
+* **S3 Object Recovery**
+
+  * Weekly sample restore of randomly selected objects from Glacier
+  * Lambda job logs SHA-256 match to `cwlogs:/backup/validation`
+* **Documentation & Evidence**
+
+  * Restore steps scripted in SSM Automation document `AWS-RunRestoreValidation`
+  * Output artifacts uploaded to `s3://org-audit-logs/restore-evidence/`
+* **Fail Criteria**
+
+  * Data mismatch > 0.1 % or restore duration > RTO (2 h) triggers *CRITICAL* PagerDuty alert
+* **Compliance Review**
+
+  * Audit Manager backup assessment – reviewed by Security Engineer monthly
+
+---
+
+</details>
+
+---
+
+### patch\_management
+
+<details>
+<summary>How & when patches are applied</summary>
+
+---
+
+* **Tools & Channels**
+
+  * `SSM Patch Manager` baselines (`Critical`, `Security`)
+  * `Maintenance Windows` tagged `patch:window=weekly`
+  * `Ansible AWX` playbook `os_patch.yml` for edge cases
+* **Schedule**
+
+  * **Dev**: every **Tuesday 02:00 UTC+7**
+  * **Staging**: every **Wednesday 02:00 UTC+7**
+  * **Prod**: every **Saturday 03:00 UTC+7** (1-hour change window)
+* **Process**
+
+  * Pre-patch snapshot via `AWS Backup` (EBS)
+  * SSM installs available patches, reboots if required
+  * Post-patch health verification (CloudWatch agent heartbeat)
+  * Automated Slack summary to `#ops-patching` with patch counts & reboot list
+* **Approval Gates**
+
+  * Prod window requires `TechLead` manual approval in CodePipeline
+  * Emergency CVE: run `SSM Automation` doc `AWS-PatchEmergency` (bypass schedule)
+
+---
+
+</details>
+
+### health\_checks\_and\_drift\_detection
+
+<details>
+<summary>Continuous validation of system state</summary>
+
+---
+
+* **Health Checks**
+
+  * **ASG instance health** – replace unhealthy > 15 min
+  * **ELB/NLB target health** – alarm on failed > 5 of 5 checks
+  * **FreeIPA replication** – cron job `ipa-replica-manage list` → CW metric `replication_status`
+  * **EFS mount availability** – CW Agent `nfs_avail` metric (1=OK,0=Fail)
+* **Drift Detection**
+
+  * **Terraform plan** every PR & nightly in CodeBuild (dry-run)
+  * **AWS Config rules** – detect SG 0.0.0.0/0 ports, unencrypted volumes, IAM key age > 90 d
+  * **Ansible check-mode** weekly run to flag config drift, results to `cwlogs:/ansible/drift`
+  * Deviations auto-tagged `drift=true` for quick filtering
+* **Remediation**
+
+  * Auto-remediate minor drift (SG revoke) via `SSM Automation`
+  * Major drift opens JIRA ticket via EventBridge → Lambda
+
+---
+
+</details>
+
+### incident\_response
+
+<details>
+<summary>Detection ➜ containment ➜ recovery workflow</summary>
+
+---
+
+* **Detection Sources**
+
+  * CloudWatch *CRITICAL* alarms, GuardDuty severity ≥ 4, Config non-compliance
+* **Trigger**
+
+  * EventBridge rule → AWS Incident Manager engagement plan `data-platform-ops`
+* **Run Books (SSM)**
+
+  * `AWS-StopEC2` (containment), `AWS-RollbackASG` (scale-in bad deploy), `AWS-RestoreEFS` (data recovery)
+* **Escalation**
+
+  * PagerDuty tiered: DevOps (T1) → Tech Lead (T2) → Security Eng (T3)
+* **Post-Incident**
+
+  * `5-Why` template stored in Confluence
+  * Incident data (CloudTrail, CW Logs) preserved to `s3://org-audit-logs/incidents/<id>/` (Write-Once)
+  * Change records updated in Ops CMDB (ServiceNow API)
+
+---
+
+</details>
+
+### routine\_automation\_tasks
+
+<details>
+<summary>Scheduled tasks & housekeeping</summary>
+
+---
+
+* **Daily**
+
+  * Rotate IAM access keys for CI/CD roles via Lambda (`access_key_rotate.py`)
+  * Export top NAT Gateway byte usage to `Athena` cost table
+* **Weekly**
+
+  * Security group rule review report (Config) → Slack
+  * EFS throughput & burst credit trend analysis → Tech Lead email
+  * Terraform `state pull` checksum archived to S3
+* **Monthly**
+
+  * Delete aged ECR image tags (> 60 d) except `prod-*` using `ecr-lifecycle.sh`
+  * Verify GuardDuty detectors enabled in all regions
+  * Run backup restore drill (see Step 3)
+* **Quarterly**
+
+  * Chaos game day: simulate AZ failure with ASG `suspend` / `resume`
+  * IAM permission boundary audit via Access Analyzer
+* **Automation Framework**
+
+  * All jobs scheduled via **EventBridge** cron → **SSM Automation** or **Lambda**
+  * Notifications aggregated in Slack `#ops-digest` with CSV attachment
+
+---
+
+</details>
 
 ---
 

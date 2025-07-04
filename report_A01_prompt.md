@@ -2,7 +2,7 @@
 
 ---
 
-### Technical Architecture Prompts
+### Technical Architecture
 
 <details>
 <summary>Generate comprehensive AWS Data Platform architecture content</summary>
@@ -230,7 +230,7 @@
 
 </details>
 
-### Automation & IaC Prompts
+### Automation & IaC
 
 <details>
 <summary>Produce Infrastructure as Code and configuration management snippets</summary>
@@ -283,7 +283,7 @@
 
 </details>
 
-### Access Control & Security Prompts
+### Access Control & Security
 
 <details>
 <summary>Design IAM, authentication flow, and security hardening content</summary>
@@ -324,18 +324,53 @@
 
 </details>
 
-### Monitoring & Operations Prompts
-
+### System integration documentation
 <details>
-<summary>Create operational procedures and observability guidance</summary>
+<summary>Design System integration documentation</summary>
 
----
+* Create System integration documentation by using this prompt by continuing the above conversation. Interact with GenAI to confirm or refine each step
+  
+  ```
+  Follow up above conversation.
 
-* Draft **CloudWatch dashboard bullet points** (CPU, memory, disk I/O, FreeIPA auth failures).
-* Generate **alert threshold suggestions** with ticket escalation workflow.
-* Provide **backup & restore procedure bullets** for EFS data and FreeIPA directory.
-* Produce **daily/weekly maintenance checklist** for platform reliability tasks.
-* Suggest **post‑incident review template bullets** (root cause, corrective actions, lessons learned).
+  # Role
+
+  You are a Senior DevOps Engineer and AWS Data Platform Architect with deep expertise in documenting enterprise system integration patterns.
+
+  # Input
+
+  All information as discussed. 
+
+  # Goal
+
+  Generate a comprehensive "System integration documentation" section describing how system components interconnect, data flows, and the overall network architecture, formatted to be included in technical architecture documentation.
+
+  ---
+
+  # Task
+
+  Create the "System integration documentation" section, covering component connectivity, data flows, and network architecture, for inclusion in system docs.
+
+  # Instructions
+  Follow these steps, one step at a time. Wait for my confirmation or edit before moving to the next.
+
+  Step 1:  
+  From the provided architecture and diagrams, identify all core system components, both application and infrastructure, involved in data flow and system integration (compute nodes, storage, data services, network boundaries, etc.).
+
+  Step 2:  
+  Map out, in bullet points, the connectivity relationships between components—specifying which components connect to which, using what protocols, ports, or access patterns. Include both internal (within VPC/subnets) and external (user access, internet, 3rd party) flows.
+
+  Step 3:  
+  Describe end-to-end data flows through the system: from data ingestion, processing, storage, to consumption. Summarize network segmentation and security zones (such as private/public subnets, load balancers, endpoint gateways).
+
+  Step 4:  
+  Output the final "System integration documentation" section in the following style:
+  - Wrap all content in a `<details>` block with a `<summary>` titled "System integration: connectivity, data flows, and network architecture".
+  - For diagrams, insert a markdown code block as a placeholder for architecture or network flow mermaid diagrams 
+  - Focus on clear, concise technical bullets. No marketing language or unnecessary prose.
+
+  Remember: Use markdown, and strictly follow the documentation ctx_doc_style.md.
+  ```
 
 ---
 
@@ -343,48 +378,60 @@
 
 ---
 
-## Prompt Workflow Guide
-
----
-
-### Step‑by‑Step Prompt Usage
+### Operational Procedures
 
 <details>
-<summary>End‑to‑end GenAI workflow for rapid report assembly</summary>
+<summary>Design Operational Procedures</summary>
 
+*  Create System integration documentation by using this prompt by continuing the above conversation. Interact with GenAI to confirm or refine each step
+  ```
+  
+  Follow up
+
+  # Role
+
+  You are a Senior DevOps Engineer and AWS Platform Operations Architect specializing in documenting operational procedures for cloud-based data platforms.
+
+
+  # Goal
+
+  Generate a detailed "Operational procedures" documentation section (for technical architecture docs) covering monitoring setup, backup procedures, and maintenance workflows.
+
+  ---
+
+  # Task
+
+  Create the "Operational procedures" section as a series of details blocks, using bullet points and strictly following the documentation ctx_doc_style.  
+  At each step, produce a ready-to-use docs section for that aspect.
+
+  # Instructions
+
+  Follow these steps. Wait for my confirmation or edits before moving to the next step.
+
+  **Step 1:**  
+  Document, all system components and AWS services involved in monitoring, backup, and operational maintenance. Use bullet points.
+
+  **Step 2:**  
+  Document, the monitoring setup:  
+  - Key metrics, alarms, and dashboards  
+  - Logging flows (which components generate which logs, where logs are sent/retained)  
+  - Alerting and escalation mechanisms
+
+  **Step 3:**  
+  Document, the backup procedures:  
+  - What resources are backed up, using which tools/services  
+  - Retention policies and backup schedules  
+  - Restore/test/validation practices
+
+  **Step 4:**  
+  Document, standard maintenance workflows:  
+  - Patch management (how, when, tools used)  
+  - Health checks, drift detection, incident response  
+  - Routine operational tasks and automation
+
+  Remember: Use markdown, and strictly follow the documentation ctx_doc_style.md. 
+
+  ```
 ---
 
-* **Stage 1 – Outline:** Use architecture prompts to generate raw content, copy into corresponding report sections.
-* **Stage 2 – Refine:** Iterate on content prompts to add depth or clarify stakeholder language as needed.
-* **Stage 3 – Automate:** Run IaC prompts to obtain code blocks; paste into report with correct indentation.
-* **Stage 4 – Validate:** Employ security and operations prompts to cross‑check completeness and risk coverage.
-* **Stage 5 – Finalize:** Generate executive summary prompts to craft concise stakeholder communication bullets.
-
----
-
-</details>
-
----
-
-## Quality Checklist
-
----
-
-### Prompt File Review
-
-<details>
-<summary>Ensure compliance with ctx_doc_style.md and content completeness</summary>
-
----
-
-* [ ] YAML front matter present with snake\_case title.
-* [ ] Each subsection contains exactly one details block.
-* [ ] No numbered lists; all bullets follow one‑concept rule.
-* [ ] All placeholders written in clear, descriptive bullets for easy replacement.
-* [ ] Technical symbols (e.g., `<5%`, `$10K`) wrapped in backticks if present.
-* [ ] Block elements indented 2 spaces under parent bullet where required.
-* [ ] Prompt coverage spans architecture, implementation, automation, security, operations, and leadership communication.
-
----
-
-</details>
+### 
