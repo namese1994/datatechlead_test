@@ -542,67 +542,51 @@ gantt
 
 ---
 
-### Repository Structure
+### terraform\_component\_list
 
 <details>
-<summary>Folder layout, module decomposition, and coding conventions</summary>
+<summary>All resources provisioned via Terraform</summary>
 
 ---
 
-* `/live` vs `/modules` directory pattern.
-* Naming conventions, backend state configuration, remote state locking.
-* CI pipeline bullets: `terraform fmt`, `terraform validate`, `tflint`, OPA policies.
+* **AWS Identity & Access Management (IAM)**
 
----
+  * `service roles`, `instance profiles`, `inline policies`, `managed policies`, `IAM groups/users`
+* **Networking**
 
-</details>
+  * `VPC`, `public-subnets`, `private-app-subnets`, `private-data-subnets`, `endpoint-subnet`, `route-tables`, `NACLs`
+  * `Internet Gateway`, `NAT Gateways (per-AZ)`
+  * `VPC Interface/Gateway Endpoints` for `SSM`, `Secrets Manager`, `S3`
+* **Security**
 
-### Core Modules
+  * all `Security Groups` and rules
+  * customer-managed `KMS keys` for `EFS`, `Secrets Manager`, `Backup`, `S3`
+  * `AWS Config`, `GuardDuty`, `CloudTrail` trails with `S3` + `CloudWatch Logs` destinations
+* **Compute & Scaling**
 
-<details>
-<summary>Reusable Terraform modules for platform components</summary>
+  * `EC2 Launch Templates`, `Auto Scaling Groups` for worker fleet
+  * `EC2 instances` for `FreeIPA (master & replica)` with `EBS` volumes and tags
+* **Load Balancing & Networking Extras**
 
----
+  * `Network Load Balancers` (multi-AZ listeners, target groups, health checks)
+  * `Route 53` private hosted-zone records (optional internal DNS)
+* **Storage & Data Services**
 
-#### vpc\_module
+  * `Amazon EFS` file system + mount targets + performance & throughput configuration
+  * `S3 buckets` for `raw`, `staged`, `curated` data lake & for `logs/artifacts`
+  * `ECR repositories` for container images
+* **Operations & Resilience**
 
-* Inputs: CIDR, subnets, tags.
-* Outputs: VPC ID, subnet IDs.
+  * `CloudWatch Log Groups`, `metric alarms`, `dashboards`
+  * `AWS Backup` vaults & backup plans (`EFS`, `FreeIPA EBS`)
+  * `EventBridge rules` for compliance / backup notifications
+* **CI/CD Foundations**
 
----
+  * `CodeBuild projects`, `CodePipeline pipelines` for  *image build/push* & *Terraform automation*
+  * `SSM Maintenance Windows` / `Patch Manager` baseline definitions
+* **Governance**
 
-#### ec2\_module
-
-* Inputs: AMI ID, instance type, user‑data template.
-* Outputs: Instance ID, private IP.
-
----
-
-#### efs\_module
-
-* Inputs: performance mode, throughput mode, lifecycle policy.
-* Outputs: File system ID, mount targets.
-
----
-
-#### iam\_module
-
-* Inputs: role name, policy JSON, path.
-* Outputs: Role ARN.
-
----
-
-</details>
-
-### Sample Snippets
-
-<details>
-<summary>Placeholder code blocks demonstrating key module usage</summary>
-
----
-
-* `TODO` add fenced `hcl` code block for EC2 & EFS resources.
-* `TODO` add example of IAM role with trust policy.
+  * comprehensive `tags` & `resource groups` for cost allocation and reporting
 
 ---
 
@@ -610,47 +594,340 @@ gantt
 
 ---
 
-## Configuration Management (Ansible)
 
----
-
-### Playbook Strategy
+### ansible\_component\_list
 
 <details>
-<summary>Role‑based approach for provisioning and configuration</summary>
+<summary>All configuration and operations handled by Ansible</summary>
 
 ---
 
-* Bullet outline of site.yml, role dependencies, inventory design.
-* Placeholder bullet for idempotency checks and rerun safety.
-* Placeholder bullet for Ansible‑pull vs Ansible‑tower discussion.
+* **OS Baseline & Hardening**
+
+  * disable unnecessary services, apply `CIS hardening`, configure `chrony/NTP`, enable `auditd`
+* **Package & Runtime Installation**
+
+  * install `Docker/Podman/containerd`, `Java`, `Python`, `Scala`, and system libraries for `Spark`, `dbt`, `Airflow`
+  * configure `CloudWatch Agent` & `SSM Agent` (if not pre-baked in AMI)
+* **Application Layer**
+
+  * deploy & update container images: `spark-runtime`, `dbt-runner`, `airflow`, `data-pipeline-custom`
+  * create `systemd` units or `Docker-Compose / ECS-Anywhere` manifests
+* **FreeIPA Setup & Management**
+
+  * install `FreeIPA` server/client, provision domain, configure replica & replication checks
+  * import bootstrap `users/groups`, apply `HBAC` & `sudo` policies
+* **Secrets & Credentials Handling**
+
+  * bootstrap scripts to pull secrets from `AWS Secrets Manager` and inject into configs / env-vars
+* **Logging & Monitoring Agents**
+
+  * configure `CloudWatch Agent` JSON, log files & custom metrics
+  * optionally install `Prometheus node exporter`
+* **Continuous Deployment Hooks**
+
+  * rolling or blue-green updates for worker `AMIs` / containers
+  * register new EC2 nodes with `FreeIPA`, deregister terminated nodes
+* **Day-2 Operations & Maintenance**
+
+  * patching playbooks (triggered via `SSM` or `Ansible AWX`)
+  * backup verification tasks, restore drills, security-baseline drift checks
+* **AMI Bake Pipeline (optional)**
+
+  * use `Packer + Ansible` to build hardened golden `AMIs` referenced by Launch Templates
 
 ---
 
 </details>
 
-### Key Roles
+
+### terraform\_deployment\_groups
+
+---
+
+#### group\_1\_identity\_and\_access
 
 <details>
-<summary>Core Ansible roles mapped to platform components</summary>
+<summary>Provision shared security primitives first</summary>
 
 ---
 
-#### role\_freeipa\_server
-
-* Tasks: install packages, configure replication, open firewall ports.
-
----
-
-#### role\_freeipa\_client
-
-* Tasks: enroll EC2 instances, configure SSSD, test authentication.
+* create backend `S3` bucket + `DynamoDB` lock table for remote state
+* deploy organisation or account-level `IAM` roles, instance profiles, and least-privilege `policies`
+* generate customer-managed `KMS` keys (`alias/data-efs`, `alias/data-s3`, `alias/data-backup`) with key-admin and key-usage roles
+* enable `CloudTrail`, central `S3` logging bucket, and org-wide `GuardDuty` + `Security Hub`
+* output `kms_key_arns`, `iam_role_arns`, and `state_bucket` for downstream modules
 
 ---
 
-#### role\_nfs\_client
+</details>
 
-* Tasks: install nfs‑utils, mount EFS via EFS mount helper, set fstab.
+#### group\_2\_stable\_core\_infrastructure
+
+<details>
+<summary>Lay down networking and other rarely-changing foundations</summary>
+
+---
+
+* create single `VPC (10.0.0.0/16)` with four application sub-nets + one endpoints sub-net
+* attach `Internet Gateway`, route tables, `NAT Gateways` (one per AZ)
+* provision `VPC Interface/Gateway Endpoints` for `SSM`, `Secrets Manager`, `S3`
+* define all baseline `Security Groups` (ingress/egress only, no instance IDs yet)
+* allocate `Amazon EFS` + mount targets in each AZ, encrypted with `KMS` from Group 1
+* register `Route 53` private hosted zone (optional) and seed base records
+* export subnet IDs, security-group IDs, and EFS file-system ID for Group 3
+
+---
+
+</details>
+
+#### group\_3\_change\_prone\_compute\_and\_services
+
+<details>
+<summary>Spin up compute, load-balancing, and ops resources</summary>
+
+---
+
+* build `EC2 Launch Templates` referencing golden AMIs and `iam_instance_profiles` from Group 1
+* create `Auto Scaling Groups` for data-worker fleet across private-app sub-nets
+* launch `FreeIPA Master` and `Replica` instances with stitched‐in `user-data`
+* deploy `Network Load Balancers`, listeners, target groups, and health checks
+* build `AWS Backup` vault + plans targeting EFS and FreeIPA EBS volumes
+* create `CloudWatch` log groups, metric alarms, dashboards, and `EventBridge` rules
+* stand-up `ECR` repos, `CodeBuild` projects, and `CodePipeline` for CI/CD workflows
+* outputs feed Ansible inventory: `worker_private_ips`, `freeipa_master_ip`, `efs_dns`
+
+---
+
+</details>
+
+---
+
+### ansible\_deployment\_phases
+
+---
+
+#### phase\_a\_freeipa\_bootstrap
+
+<details>
+<summary>Configure identity backbone before touching workers</summary>
+
+---
+
+* harden OS, install `freeipa-server` packages on master node
+* initialise FreeIPA domain, enable replication ports, create admin service accounts
+* install `freeipa-server` on replica and join to master with replication checks
+
+---
+
+</details>
+
+#### phase\_b\_worker\_os\_baseline
+
+<details>
+<summary>Prepare all worker nodes for platform runtimes</summary>
+
+---
+
+* apply CIS level-1 hardening, configure `chrony`, `auditd`, and required kernel params
+* install `Docker` (or `containerd`), `Java 11`, `Python 3.x`, `Scala`, and common libs
+* enrol each node into FreeIPA (`ipa-client-install`) for LDAP/Kerberos auth
+* deploy and start `CloudWatch Agent` & validate log/metric flow to CloudWatch
+
+---
+
+</details>
+
+#### phase\_c\_platform\_runtime\_deploy
+
+<details>
+<summary>Lay down Spark, dbt, Airflow, and custom pipelines</summary>
+
+---
+
+* pull signed images from `ECR` and load into local container runtime
+* render config files from templates, injecting secrets via `aws-secretsmanager` lookup
+* create `systemd` units or `compose` stacks; validate service health locally
+* mount shared datasets from `EFS` and run smoke tests against sample data
+
+---
+
+</details>
+
+#### phase\_d\_day\_2\_operations
+
+<details>
+<summary>Enable ongoing maintenance and updates</summary>
+
+---
+
+* configure `SSM Patch Manager` baseline tags and Ansible playbook hooks
+* schedule rolling AMI or container updates through Ansible AWX pipelines
+* run backup validation playbooks, restore drills, and security-drift scans
+* export compliance reports to `S3` and notify `PagerDuty` via EventBridge rule
+
+---
+
+</details>
+
+---
+
+### orchestration\_flow
+
+---
+
+#### workflow\_summary
+
+<details>
+<summary>End-to-end execution order and gating logic</summary>
+
+---
+
+* run `terraform init/plan/apply` for **Group 1** → obtain remote-state backend & `kms` keys
+* run `terraform apply` for **Group 2** (depends on Group 1 outputs)
+* run `terraform apply` for **Group 3** (references IDs from Group 2)
+* collect dynamic inventory from Terraform state; feed into Ansible controller
+* execute Ansible **Phase A → B → C → D** in sequence, halting on any failure
+* guard each stage with `environment` and `sensitive` approver blocks inside the CI/CD pipeline
+
+---
+
+</details>
+
+---
+
+## repo\_structure
+
+---
+
+### terraform\_repository
+
+<details>
+<summary>Directory layout and content owned by Terraform</summary>
+
+---
+
+* **Directory tree**
+
+  ```bash
+  terraform/
+  ├── globals/            # IAM, KMS, CloudTrail, remote-state backend
+  ├── networking/         # VPC, subnets, IGW, NAT, endpoints
+  ├── platform/           # ASG, EFS, FreeIPA, NLB, ECR, Backup
+  ├── modules/            # Re-usable opinionated TF modules
+  │   ├── vpc/
+  │   ├── kms/
+  │   ├── sg/
+  │   ├── efs/
+  │   ├── asg/
+  │   └── nlb/
+  ├── environments/       # Layered workspaces
+  │   ├── dev/
+  │   ├── staging/
+  │   └── prod/
+  ├── pipelines/          # CodeBuild ⟶ CodePipeline definitions
+  ├── scripts/            # Helper wrappers (fmt/lint/plan/apply)
+  └── README.md
+  ```
+* **State strategy**
+
+  * `globals/` creates remote-state `S3` bucket + `DynamoDB` lock
+  * each folder keeps its own backend stanza (`key = env/name.tfstate`)
+* **Module conventions**
+
+  * version-pinned providers via `terraform.tf` in root
+  * `modules/*` expose variables with sane defaults; no provider blocks
+* **CI hooks**
+
+  * pre-commit running `tflint`, `tfsec`, `terraform validate`, `checkov`
+
+---
+
+#### modules\_breakdown
+
+* `modules/vpc` – parametrised multi-AZ VPC with route-tables & NACLs
+* `modules/sg` – opinionated security-group factory with rule lists
+* `modules/efs` – EFS, mount targets, SG, lifecycle policies
+* `modules/asg` – launch template + mixed-instances policy + scaling policies
+* `modules/nlb` – cross-AZ Network LB, listeners, target groups, HC’s
+
+---
+
+</details>
+
+### ansible\_repository
+
+<details>
+<summary>Playbooks, roles, inventory, and AMI bake pipeline</summary>
+
+---
+
+* **Directory tree**
+
+  ```bash
+  ansible/
+  ├── inventories/
+  │   ├── dynamic_terraform.yml   # Pulls hosts/vars from TF state
+  │   └── group_vars/
+  ├── roles/
+  │   ├── os_hardening/
+  │   ├── freeipa_server/
+  │   ├── freeipa_client/
+  │   ├── docker_runtime/
+  │   ├── spark_runtime/
+  │   ├── airflow/
+  │   ├── dbt_runner/
+  │   └── logging_agent/
+  ├── playbooks/
+  │   ├── 10_freeipa_bootstrap.yml
+  │   ├── 20_worker_baseline.yml
+  │   ├── 30_platform_deploy.yml
+  │   └── 40_day2_ops.yml
+  ├── packer/
+  │   └── freeipa_ami.pkr.hcl
+  ├── files/               # Static artefacts
+  ├── templates/           # Jinja2 configs
+  ├── scripts/             # Utility wrappers & Molecule tests
+  └── README.md
+  ```
+* **Inventory**
+
+  * dynamic plugin reads Terraform outputs; tag-based grouping (`role`, `env`)
+* **Vault & secrets**
+
+  * `ansible-vault` encrypted vars for bootstrap secrets & tokens
+* **CI pipeline**
+
+  * GitHub Actions workflow: `ansible-lint`, `molecule`, then AWX job-template trigger
+
+---
+
+#### role\_conventions
+
+* self-contained roles with `tasks/handlers/defaults/vars/templates/files`
+* idempotency validated in `check_mode` pipelines
+* role tags follow `role:<name>` + `tier:<layer>` + `env:<workspace>` patterns
+
+---
+
+</details>
+
+### shared\_ci\_cd
+
+<details>
+<summary>Cross-tooling pipelines and developer ergonomics</summary>
+
+---
+
+* **`.github/workflows/`**
+
+  * `terraform-ci.yml` – fmt ➜ lint ➜ plan ➜ apply (protected branch, manual approval)
+  * `ansible-ci.yml` – lint ➜ molecule ➜ deploy via AWX API
+* **`scripts/`** (repo-root)
+
+  * `terraform-wrapper.sh` – standardises backend selection and var-file injection
+  * `ansible-wrapper.sh` – dynamic-inventory generator + vault helpers
+* **Pre-commit config** applies to both `/terraform` and `/ansible` paths
 
 ---
 

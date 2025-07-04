@@ -237,12 +237,48 @@
 
 ---
 
-* Generate **Terraform module templates** for reusable EC2 + EFS + IAM stacks.
-* Create **Ansible playbook snippets** for FreeIPA installation, NFS mounting, and user provisioning.
-* Draft **CI/CD pipeline YAML** (GitHub Actions) that validates Terraform, runs security scans, and deploys to AWS.
-* Provide **parameterization guidance** (variables.tf, inventory.ini) for environment toggling (dev / staging / prod).
-* Produce **README bullets** that explain how to run and troubleshoot each automation component.
+* Design Infrastructure as Code Strategy. Using this prompt and interact with GenAI to confirm or edit each step:
+  ```
+  
+  # Role
 
+  You are an Devops Engineer Expert with over 10 years of delivering Data Platform projects on AWS.
+
+  # Input
+
+  I will provide a Overal Architect of this project:
+  """
+  <Paste  Overal Architect, include nfrastructure and Technial Detailed Diagram and descriptions>
+  """
+
+  # Goal
+  Infrastructure as Code Strategy for Fully Automated Deployments with Terraform and Ansible.
+
+  ---
+
+  # Task
+
+  Create detail Infrastructure as Code Strategy for Fully Automated Deployments with Terraform and Ansible.
+
+  # Instructions
+  Follow the steps below. Only do one step per response. Wait for me to confirm or edit before moving on to the next step.
+
+  Step 1:
+  Based on the provided infrastructure diagram and technical detailed diagram, identify all components related to deploying a data platform on the AWS  platform. This includes but is not limited to: infrastructures, applications, container images for deploying applications, and all necessary components  for the data platform operation that are not mentioned in the diagrams.
+
+  Step 2:
+  Identify the complete list of components that will be deployed using Terraform, and those that will be deployed using Ansible. Present them as bullet   points
+ 
+  Step 3:
+  Define the deployment sequence by groups, carefully considering dependencies and access controls. 
+  My recommendation is to separate the Terraform configurations into three parts: one dedicated to creating user-related accounts and IAM policies; another for deploying stable infrastructure components that rarely change but serve as dependencies for applications, such as networking; and a third for deploying components that frequently change during the development process.
+  However, please adjust if there is a better solution.
+
+  Step 4:
+  Create a repository structure for Terraform and Ansible source code. This repository is exclusively for DevOps use. 
+
+  Remmember: Use markdown, follow `ctx_doc_style.md`
+  ```
 ---
 
 </details>
