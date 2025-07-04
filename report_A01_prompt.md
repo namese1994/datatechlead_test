@@ -141,94 +141,40 @@
 </details>
 
 ### Deployment chronology
-
 <details>
-<summary>Create detailed deployment chronology and resource allocation</summary>
+<summary>Determine project deployment chronology</summary>
 
----
-
-* Outline an **8‑week Deployment chronology** with weekly milestones, deliverables, and responsibility assignments for a four‑engineer team. Use this prompt for additional importance information before starting create Deployment chronology.
+* Use following prompt
   ```
   # Role
 
-  You are an experienced Project Manager with over 20 years of delivering Data Platform   projects in IT, especially on AWS.
+  You are an Devops Engineer Expert with over 10 years of delivering Data Platform projects on AWS.
 
   # Input
 
-  I will provide a Infrastructure and Technial Detailed Diagram for an AWS Data Platform  deployment project:
+  I will provide a Overal Architect of this project:
   """
-  <Copy Infrastructure and Technial Detailed Diagram>
-
-  # Goal
-
-  Design a complete 8-week Deployment chronology that meets technical requirements and  ensures effective coordination among all related teams.
-
-  ---
+  <Paste  Overal Architect, include nfrastructure and Technial Detailed Diagram and descriptions>
+  """
 
   # Task
 
-  Step 1 – Request for Additional Information:
-  Before planning, list all the additional information you need me to provide to ensure  your handover plan is accurate and practical. Wait for answsering before go to step 2.
+  Create Deployment chronology for above project.
 
-  Step 2 – Design Deployment chronology :
-  Based on all input information, Create Deployment chronology, including:
+  # requirements:
 
-  * 8-week schedule, broken down by week and clear sprints
-  * Key technical milestones
-  * Include weekly milestones, deliverables, and responsibility assignments for a four‑engineer team
-  * 20–30% buffer time for incident handling or requirement changes
-  * Apply Agile Scrum
-  * Strategy to minimize task dependencies and prioritize handling blockers first
-  * A mermaid chart as code to show timeline as roadmap, summary
-
-  # Style & Format
-
-  * Use markdown, follow `ctx_doc_style.md`
-  * Clear sections (`##`, `###`, `####`)
-  * Use bullet points instead of long paragraphs
-  ```
-  After that, provide the information that GenAI requests. Like below:
+  * Presented by mermaid chart code
+  * Step-by-step technical implementation timeline in exact chronologica order
+  * For devops engineers (4 engineers) to implement.
+  * Blockers will be executed first.
+  * Prioritize executing the most complex part first
+  * Reduce the risk of affecting deadlines
 
   ```
-  1. Project Context
-
-  * Current phase: initiation
-  * Type of handover: between internal teams
-  * Reason for handover: completion of data platform setup
-  * Deadline: within 8 weeks
-
-  2. Team & Resources
-
-  * Current operating team: 4 DevOps engineers, average 1 year of experience
-  * Receiving team: Data engineering team
-  * Training time: arranged reasonably as required
-  * Personnel availability: 5%-8% time off; no other commitments
-
-  3. Environment & Configuration
-
-  * Number of environments: Dev, Staging, Production
-  * Existing data: none
-  * Active workloads: none
-  * Change management: platform team manages internally
-
-  4. Documentation
-
-  * Requirements: architecture documentation, runbook, operation manual, security documentation
-  * Source code: IaC source code
-  * Monitoring: dashboard, alert
-
-  5. Operational Requirements
-
-  * Backup & DR: storage backup only
-  * Incident response & escalation process
-  * Vendor dependency: none
-  * Compliance: SOC2, GDPR, industry regulations
-
-  ```
-
----
 
 </details>
+
+---
 
 ### Automation & IaC
 
@@ -434,4 +380,92 @@
   ```
 ---
 
-### 
+### Team implementation guidance and Project timeline management 
+
+<details>
+<summary>Create detailed Project timeline management  and resource allocation</summary>
+
+---
+
+* Outline an **8‑week Project timeline management ** with weekly milestones, deliverables, and responsibility assignments for a four‑engineer team. Use this prompt for additional importance information before starting create Project timeline management .
+  ```
+  # Role
+
+  You are an experienced Project Manager with over 20 years of delivering Data Platform   projects in IT, especially on AWS.
+
+  # Input
+
+  I will provide a Infrastructure and Technial Detailed Diagram for an AWS Data Platform  deployment project:
+  """
+  <Copy Infrastructure and Technial Detailed Diagram>
+
+  # Goal
+
+  Design a complete 8-week Project timeline management that meets technical requirements and  ensures effective coordination among all related teams.
+
+  ---
+
+  # Task
+
+  Step 1 – Request for Additional Information:
+  Before planning, list all the additional information you need me to provide to ensure  your handover plan is accurate and practical. Wait for answsering before go to step 2.
+
+  Step 2 – Design Project timeline management:
+  Based on all input information, Create Project timeline management , including:
+
+  * 8-week schedule, broken down by week and clear sprints
+  * Key technical milestones
+  * Include weekly milestones, deliverables, and responsibility assignments for a four‑engineer team
+  * 20–30% buffer time for incident handling or requirement changes
+  * Apply Agile Scrum
+  * Strategy to minimize task dependencies and prioritize handling blockers first
+  * A mermaid chart as code to show timeline as roadmap, summary
+
+  # Style & Format
+
+  * Use markdown, follow `ctx_doc_style.md`
+  * Clear sections (`##`, `###`, `####`)
+  * Use bullet points instead of long paragraphs
+  ```
+  After that, provide the information that GenAI requests. Like below:
+
+  ```
+  1. Project Context
+
+  * Current phase: initiation
+  * Type of handover: between internal teams
+  * Reason for handover: completion of data platform setup
+  * Deadline: within 8 weeks
+
+  2. Team & Resources
+
+  * Current operating team: 4 DevOps engineers, average 1 year of experience
+  * Receiving team: Data engineering team
+  * Training time: arranged reasonably as required
+  * Personnel availability: 5%-8% time off; no other commitments
+
+  3. Environment & Configuration
+
+  * Number of environments: Dev, Staging, Production
+  * Existing data: none
+  * Active workloads: none
+  * Change management: platform team manages internally
+
+  4. Documentation
+
+  * Requirements: architecture documentation, runbook, operation manual, security documentation
+  * Source code: IaC source code
+  * Monitoring: dashboard, alert
+
+  5. Operational Requirements
+
+  * Backup & DR: storage backup only
+  * Incident response & escalation process
+  * Vendor dependency: none
+  * Compliance: SOC2, GDPR, industry regulations
+
+  ```
+
+---
+
+</details>

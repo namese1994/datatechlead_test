@@ -370,174 +370,57 @@
 
 ---
 
-## Implementation Plan & Timeline
----
-
-### Team legend
+## Deployment chronology
 <details>
-<summary>Roles & primary skill domains</summary>
-
----
-
-| Abbr. | Focus | Key Responsibilities |
-|-------|-------|----------------------|
-| **PM** | Project Mgr / Scrum Master | Ceremonies, backlog, blockers |
-| **E1** | Networking & IaC | VPC, SGs, Terraform core |
-| **E2** | Compute & Auth | EC2 ASG, FreeIPA |
-| **E3** | Storage & DR | EFS, AWS Backup, S3 |
-| **E4** | CI/CD & Observability | GitHub Actions, CloudWatch, cost alerts |
-
----
-
-</details>
-
---- 
-
-### Team allocation_matrix
-<details>
-<summary>Engineer tasks per sprint (all work ≈ 85 % capacity)</summary>
-
----
-
-| Sprint | E1 | E2 | E3 | E4 |
-|--------|----|----|----|----|
-| **1** (07 Jul – 20 Jul) | VPC, subnets, NAT, endpoints | Launch Template, stub AMI | EFS-Dev create, KMS | Repo scaffold, CI lint |
-| **2** (21 Jul – 03 Aug) | NLB + SG harden, **S3 raw/curated buckets** | ASG-Dev & smoke | FreeIPA master + replica | Secrets rotation, **env-tagged secrets structure**, CW dashboards |
-| **3** (04 Aug – 17 Aug) | Stage IaC clone, firewall rules | **Autoscale & NLB fail-over validation**, compute tuning | Backup plan, DR docs, **EFS throughput test**, **synthetic workload generator** | tfsec/cfn-nag, cost anomaly alerts |
-| **4** (18 Aug – 01 Sep) | Prod blue/green cut-over, **change-freeze comms** | FreeIPA hardening & audit | EFS snapshot verify, **rollback simulation drill** | KT workshops, runbooks |
-
----
-
-</details>
-
----
-
-### sprint_backlog
-<details>
-<summary>Major deliverables by week</summary>
-
----
-
-#### **Sprint 1 (Weeks 1-2)**
-- VPC & networking IaC live (Dev)
-- EFS-Dev provisioned, KMS encryption verified
-- CI pipeline & linting in place
-
-#### **Sprint 2 (Weeks 3-4)**
-- NLB listeners & hardened SGs deployed
-- ASG-Dev smoke test passes
-- Raw & curated **S3 buckets** with lifecycle + SSE-KMS
-- Secrets Manager rotation & **env separation** established
-
-#### **Sprint 3 (Weeks 5-6)**
-- Stage environment cloned via IaC
-- **Autoscale scale-out/in & NLB cross-AZ fail-over** tested
-- **Synthetic workload** runs against Stage; **EFS I/O stress test** logged
-- DR docs, tfsec/cfn-nag scans, cost alerts green
-
-#### **Sprint 4 (Weeks 7-8)**
-- Production blue/green deployment & smoke
-- **Rollback simulation** completed; change-freeze window enforced
-- Knowledge-transfer workshops and runbooks signed off
-- Formal hand-over & closure
-
----
-
-</details>
-
----
-
-### Roadmap
+<summary>project deployment chronology step by step</summary>
 ```mermaid
 gantt
-    title AWS Data Platform Roadmap (2025)
+    title AWS Data Platform – Deployment Chronology (Assume kick off date is 7-7-2025)
     dateFormat  YYYY-MM-DD
-    axisFormat  %b %d
-    section Sprint 1
-    Networking & Repo                :s1, 2025-07-07, 14d
-    section Sprint 2
-    NLB, ASG, S3 & Secrets           :s2, 2025-07-21, 14d
-    S3 Buckets Ready (Gate #1)       :milestone, 2025-07-30, 0d
-    section Sprint 3
-    Stage Perf & Validation          :s3, 2025-08-04, 14d
-    Autoscale & Fail-over OK (Gate#2):milestone, 2025-08-11, 0d
-    EFS I/O Test Pass                :milestone, 2025-08-13, 0d
-    section Sprint 4
-    Prod Cut-over & KT               :s4, 2025-08-18, 14d
-    Rollback Drill (Gate #3)         :milestone, 2025-08-22, 0d
-    Final Handover Sign-off          :milestone, 2025-08-29, 0d
+    excludes    weekends
+
+    section Blockers & Foundations
+    Repo / CI-CD pipeline [E1]               :active, task_repo, 2025-07-07, 3d
+    IAM baseline roles & policies [E2]       :task_iam,  after task_repo, 2d
+    VPC & Subnet provisioning [E3]           :task_vpc,  after task_repo, 3d
+    Security groups & KMS keys [E4]          :task_sg,   after task_iam, 2d
+
+    section Core Networking
+    VPC Endpoints (SSM,S3,SM) [E3]           :task_vpcep, after task_vpc, 2d
+    NAT Gateways (HA) [E3]                   :task_nat,   after task_vpc, 1d
+
+    section Storage
+    EFS + Mount Targets (Multi-AZ) [E4]      :task_efs,   after task_sg, 2d
+
+    section Identity (critical)
+    FreeIPA Master (AZ-1a) [E1]              :crit, task_ipa_master, after task_vpcep, 2d
+    FreeIPA Replica (AZ-1b) [E1]             :crit, task_ipa_replica, after task_ipa_master, 2d
+    Replication validation [E1,E2]           :task_ipa_validate, after task_ipa_replica, 1d
+
+    section Compute Fleet
+    Hardened AMI build [E2]                  :task_ami,  after task_ipa_validate, 3d
+    Auto Scaling Group config [E2]           :task_asg,  after task_ami, 1d
+    Worker nodes launch [E2]                 :task_workers, after task_asg, 2d
+    Network Load Balancer & TGs [E3]         :task_nlb,  after task_asg, 2d
+    Join workers to FreeIPA [E1,E2]          :task_join, after task_workers, 1d
+
+    section Operations & Security
+    Session Manager baseline [E3]            :task_ssm,   after task_nlb, 1d
+    CloudWatch agent + dashboards [E4]       :task_cw,    after task_ssm, 2d
+    Secrets Manager + rotation [E4]          :task_sm,    after task_ssm, 2d
+    AWS Backup plans (EFS & EBS) [E4]        :task_backup, after task_sm, 1d
+
+    section Validation & Hardening
+    Integration tests (pipeline smoke) [E2]  :task_test,   after task_backup, 2d
+    Security assessment / pen-test [E3]      :task_secassess, after task_test, 2d
+    Performance & load tests [All]           :task_perf,  after task_test, 3d
+
+    section Closure
+    Cost-monitoring baseline [E4]            :task_cost,  after task_perf, 1d
+    Documentation & Knowledge Transfer [All] :milestone, task_docs, after task_cost, 2d
+
 ```
-
-### milestones
-
-<details>
-<summary>Milestone checklist</summary>
-
----
-
-| Date (2025) | Milestone                                        |
-| ----------- | ------------------------------------------------ |
-| **Jul 18**  | Dev VPC & CI pipeline green                      |
-| **Jul 30**  | **S3 buckets provisioned & secured**             |
-| **Aug 01**  | Dev end-to-end smoke test complete               |
-| **Aug 11**  | **Autoscale & NLB fail-over validation passed**  |
-| **Aug 13**  | **EFS throughput stress test passed**            |
-| **Aug 14**  | DR fail-over drill successful                    |
-| **Aug 22**  | **Rollback simulation & change-freeze approved** |
-| **Aug 25**  | Cost-optimisation checkpoint                     |
-| **Aug 29**  | Production go-live & hand-over accepted          |
-
----
-
 </details>
-
----
-
-### blocker\_strategy
-
----
-
-#### mitigation
-
-<details>
-<summary>Top risks & mitigations</summary>
-
----
-
-| Blocker            | Mitigation                                                  |
-| ------------------ | ----------------------------------------------------------- |
-| AWS quotas         | Raise limits Sprint 1 Week 1; nightly CI quota checks       |
-| Security approvals | Evidence staged continuously; Gate #1 & Gate #2 checkpoints |
-| DR readiness       | DR docs Sprint 3; fail-over drill milestone                 |
-| Cost overrun       | Cost alerts Sprint 3; optimisation review                   |
-| Rollback readiness | Simulation in Sprint 4 before cut-over                      |
-| Skill gaps         | Pair-programming; daily 30 m tech huddle                    |
-
----
-
-</details>
-
----
-
-### buffer\_pto
-
----
-
-<details>
-<summary>Incident & PTO handling</summary>
-
----
-
-* 20 % sprint buffer covers incidents, re-work, PTO
-* Each engineer may take up to **4 PTO days** across project; prior notice needed
-* Unused buffer converts to tech-debt resolution
-
----
-
-</details>
-
----
-
 ## Infrastructure as Code (Terraform)
 
 ---
@@ -1487,6 +1370,156 @@ graph TD
 ---
 
 </details>
+
+---
+
+</details>
+
+---
+
+## Implementation Plan & Timeline
+---
+
+### Team legend
+<details>
+<summary>Roles & primary skill domains</summary>
+
+---
+
+| Abbr. | Focus | Key Responsibilities |
+|-------|-------|----------------------|
+| **PM** | Project Mgr / Scrum Master | Ceremonies, backlog, blockers |
+| **E1** | Networking & IaC | VPC, SGs, Terraform core |
+| **E2** | Compute & Auth | EC2 ASG, FreeIPA |
+| **E3** | Storage & DR | EFS, AWS Backup, S3 |
+| **E4** | CI/CD & Observability | GitHub Actions, CloudWatch, cost alerts |
+
+---
+
+</details>
+
+--- 
+
+### Team allocation_matrix
+<details>
+<summary>Engineer tasks per sprint (all work ≈ 85 % capacity)</summary>
+
+---
+
+| Sprint | E1 | E2 | E3 | E4 |
+|--------|----|----|----|----|
+| **1** (07 Jul – 20 Jul) | VPC, subnets, NAT, endpoints | Launch Template, stub AMI | EFS-Dev create, KMS | Repo scaffold, CI lint |
+| **2** (21 Jul – 03 Aug) | NLB + SG harden, **S3 raw/curated buckets** | ASG-Dev & smoke | FreeIPA master + replica | Secrets rotation, **env-tagged secrets structure**, CW dashboards |
+| **3** (04 Aug – 17 Aug) | Stage IaC clone, firewall rules | **Autoscale & NLB fail-over validation**, compute tuning | Backup plan, DR docs, **EFS throughput test**, **synthetic workload generator** | tfsec/cfn-nag, cost anomaly alerts |
+| **4** (18 Aug – 01 Sep) | Prod blue/green cut-over, **change-freeze comms** | FreeIPA hardening & audit | EFS snapshot verify, **rollback simulation drill** | KT workshops, runbooks |
+
+---
+
+</details>
+
+---
+
+### sprint_backlog
+<details>
+<summary>Major deliverables by week</summary>
+
+---
+
+#### **Sprint 1 (Weeks 1-2)**
+- VPC & networking IaC live (Dev)
+- EFS-Dev provisioned, KMS encryption verified
+- CI pipeline & linting in place
+
+#### **Sprint 2 (Weeks 3-4)**
+- NLB listeners & hardened SGs deployed
+- ASG-Dev smoke test passes
+- Raw & curated **S3 buckets** with lifecycle + SSE-KMS
+- Secrets Manager rotation & **env separation** established
+
+#### **Sprint 3 (Weeks 5-6)**
+- Stage environment cloned via IaC
+- **Autoscale scale-out/in & NLB cross-AZ fail-over** tested
+- **Synthetic workload** runs against Stage; **EFS I/O stress test** logged
+- DR docs, tfsec/cfn-nag scans, cost alerts green
+
+#### **Sprint 4 (Weeks 7-8)**
+- Production blue/green deployment & smoke
+- **Rollback simulation** completed; change-freeze window enforced
+- Knowledge-transfer workshops and runbooks signed off
+- Formal hand-over & closure
+
+---
+
+</details>
+
+---
+
+### Roadmap and milestones
+```mermaid
+gantt
+    title AWS Data Platform – Sprint-based Milestone Roadmap (2025)
+    dateFormat  YYYY-MM-DD
+    axisFormat  %b %d
+
+    section Sprint 1 (07-07 → 07-20)
+    Dev VPC & CI pipeline green                     :milestone, m_vpc_ci,  2025-07-18, 0d
+
+    section Sprint 2 (07-21 → 08-03)
+    S3 buckets provisioned & secured                :milestone, m_s3,      2025-07-30, 0d
+
+    section Sprint 3 (08-04 → 08-17)
+    Dev end-to-end smoke test complete              :milestone, m_smoke,   2025-08-06, 0d
+    Autoscale & NLB fail-over validation passed     :milestone, m_nlb,     2025-08-11, 0d
+    EFS throughput stress test passed               :milestone, m_efs,     2025-08-13, 0d
+    DR fail-over drill successful                   :milestone, m_dr,      2025-08-14, 0d
+
+    section Sprint 4 (08-18 → 08-31)
+    Rollback simulation & change-freeze approved    :milestone, m_rb,      2025-08-22, 0d
+    Cost-optimisation checkpoint                    :milestone, m_cost,    2025-08-25, 0d
+    Production go-live & hand-over accepted         :milestone, m_go,      2025-08-29, 0d
+
+```
+
+---
+
+### blocker\_strategy
+
+---
+
+#### mitigation
+
+<details>
+<summary>Top risks & mitigations</summary>
+
+---
+
+| Blocker            | Mitigation                                                  |
+| ------------------ | ----------------------------------------------------------- |
+| AWS quotas         | Raise limits Sprint 1 Week 1; nightly CI quota checks       |
+| Security approvals | Evidence staged continuously; Gate #1 & Gate #2 checkpoints |
+| DR readiness       | DR docs Sprint 3; fail-over drill milestone                 |
+| Cost overrun       | Cost alerts Sprint 3; optimisation review                   |
+| Rollback readiness | Simulation in Sprint 4 before cut-over                      |
+| Skill gaps         | Pair-programming; daily 30 m tech huddle                    |
+
+---
+
+</details>
+
+---
+
+### buffer\_pto
+
+---
+
+<details>
+<summary>Incident & PTO handling</summary>
+
+---
+
+* 20 % sprint buffer covers incidents, re-work, PTO
+* Each engineer may take up to **4 PTO days** across project; prior notice needed
+* Unused buffer converts to tech-debt resolution
 
 ---
 
